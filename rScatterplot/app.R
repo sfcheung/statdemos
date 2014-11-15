@@ -1,4 +1,5 @@
 # Generate a scatterplot for user-specified Pearson's r
+# To run in R: runGitHub("statDemos","sfcheung",subdir="rScatterplot")
 
 rho <- .8 # Population correlation
 n <- 500  # Sample size
