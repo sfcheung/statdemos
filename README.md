@@ -1,4 +1,4 @@
 statDemos
 =========
 
-Collections of demonstrations related to statistics
+Collection of demonstrations related to statistics.
