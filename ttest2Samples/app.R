@@ -28,7 +28,7 @@ ui <- fluidPage(
                    numericInput('sd2', "Standard deviation (min .1)", min=.1, step=.1, value=sd2def),
                    width=3
                   ),
-      mainPanel(plotOutput('plot'))
+      mainPanel(plotOutput('plot', height="600px"))
     )
 )
 
@@ -103,6 +103,7 @@ server <- function(input, output) {
     
     
     cexAll <- 1
+    cexMain <- 1.1
     # Don't know why cex cannot control the magnification of all elements
     # So used cexAll here
     # Generate the plot object
@@ -114,7 +115,7 @@ server <- function(input, output) {
     plot(hRange,h1,type="l", cex.main=cexAll,
           ylim=c(0,yMax),
           xlab="Score",
-          ylab="",yaxt="n",
+          ylab="",yaxt="n", cex.main=cexMain,
           main=c("Theoretical distribution of *scores* based on sample statistics",
                  "Red: Sample 1 / Blue: Sample 2"),
           sub="Each sample's own standard deviation is used")
@@ -139,7 +140,7 @@ server <- function(input, output) {
             
     plot(thRange,th1,type="l", cex.main=cexAll,
           xlab="t statistic",
-          ylab="",yaxt="n",
+          ylab="",yaxt="n", cex.main=cexMain,
           main=c("Theoretical distribution of t statistic",
                  paste("(Degrees of freedom=", df, ")", sep="")),
           sub=t_sub
@@ -165,7 +166,7 @@ server <- function(input, output) {
     plot(mhRange,mh1,type="l", cex.main=cexAll,
           ylim=c(0,ymMax),
           xlab="Score Mean",
-          ylab="",yaxt="n",
+          ylab="",yaxt="n", cex.main=cexMain,
           main=c("Theoretical distribution of *sample means*",
                  "Red: Sample 1 / Blue: Sample 2"),
           sub="The pooled estimate of standard deviation is used")
@@ -190,7 +191,7 @@ server <- function(input, output) {
                      
     plot(diffhRange,diffh1,type="l", cex.main=cexAll,
           xlab="Sample mean difference (Mean 2 - Mean 1)",
-          ylab="",yaxt="n",
+          ylab="",yaxt="n", cex.main=cexMain,
           main=paste("Theoretical distribution of difference of two sample means\n",
                "Standard error of difference = ", format(seDiff, digits=2),"\n",
                sep=""),
