@@ -1,51 +1,61 @@
 # In progress. Not ready.
 
-# Illustrate two-sample t test
+# Illustrate the idea of residual and sum of squares in one-way ANOVA
 # To run in R: runGitHub("statDemos","sfcheung",subdir="ANOVAResidual")
-
-
 
 # Global variables
 anova.data <- read.csv("anova.data.csv", header = TRUE, as.is=1)
 gp_means <- tapply(anova.data$score, anova.data$group, mean)
 g_mean <- mean(anova.data$score)
 gp_f <- factor(levels(anova.data$group))
-anova.data$score <- anova.data$score - 
+anova.data$score <- anova.data$score -  
                     rep(gp_means, times=table(anova.data$group))
+# Initial gp_means
+gp_means <- c(24,16,6,22)
 n_total <- nrow(anova.data)
-n_gp <- table(anova.data.i$group)
+n_gp <- table(anova.data$group)
+score_max <- max(anova.data$score)
+score_min <- min(anova.data$score)
+sdC_max <- 2
+sdC_min <- 0
+gp_means_max <- max(gp_means) + 5
+gp_means_min <- 5
+yAxis_max <- sdC_max*score_max + gp_means_max
+yAxis_min <- sdC_max*score_min - gp_means_min
 
 # UI
 ui <- fluidPage(
-  titlePanel("Illustrate one-way ANOVA"),
+  titlePanel("Illustrate the idea of residual and sum of squares in one-way ANOVA"),
   sidebarLayout(
       sidebarPanel(p("Change the following and see how the residuals change:"),
                    h6("Means:"),
                    sliderInput('m1', "Group 1", 
-                      min=0, max=50, value=gp_means[1], step=1),
+                      min=gp_means_min, max=gp_means_max, value=gp_means[1], step=1),
                    sliderInput('m2', "Group 2", 
-                      min=0, max=50, value=gp_means[2], step=1),
+                      min=gp_means_min, max=gp_means_max, value=gp_means[2], step=1),
                    sliderInput('m3', "Group 3", 
-                      min=0, max=50, value=gp_means[3], step=1),
+                      min=gp_means_min, max=gp_means_max, value=gp_means[3], step=1),
                    sliderInput('m4', "Group 4", 
-                      min=0, max=50, value=gp_means[4], step=1),
+                      min=gp_means_min, max=gp_means_max, value=gp_means[4], step=1),
+                   br(),
                    h6("Within Group Variation"),
-                   sliderInput('sdC', "Increase/decrease by this factor",
-                      min=.25, max=5, value=1, step=.05)
+                   sliderInput('sdC', 
+                    "Increase/decrease variation within a group by this factor",
+                      min=sdC_min, max=sdC_max, value=1, step=.05)
                   ),
-      mainPanel(plotOutput('plot'))
+      mainPanel(plotOutput('plot', height="600px"))
     )
 )
 
 # Server
-server <- function(input, output) {
+server <- function(input, output, session) {
   output$plot <- renderPlot({
     gp_means[1] <- input$m1
     gp_means[2] <- input$m2
     gp_means[3] <- input$m3
     gp_means[4] <- input$m4
     sdC <- input$sdC
-
+    
     # Create the data frame
     anova.data.i <- anova.data
     anova.data.i$score <- sdC*anova.data.i$score + 
@@ -66,6 +76,8 @@ server <- function(input, output) {
     # Set graph parameters
     yMin <- min(anova.data.i$score)
     yMax <- max(anova.data.i$score)
+    yMin <- yAxis_min
+    yMax <- yAxis_max
     
     Flo <- 0
     Fhi <- max(anova.F*1.25, qf(1-.0005, dfb, dfw))
@@ -76,6 +88,7 @@ server <- function(input, output) {
     Fpd <- df(FpRange, dfb, dfw)
     
     cexAll <- 1
+    cexPt <- 2
     # Don't know why cex cannot control the magnification of all elements
     # So used cexAll here
     # Generate the plot object
@@ -89,7 +102,7 @@ server <- function(input, output) {
         ylab="Score",
         xlab="Group",
         main=c("Group Means"))
-    points(gp_f, gp_means, cex=2, pch=16)
+    points(gp_f, gp_means, cex=cexPt, pch=16)
     lines(gp_f, gp_means, col="blue", lwd=4)
     abline(h=g_mean, lty="dotted", lwd=2, col="red")
     
@@ -98,19 +111,32 @@ server <- function(input, output) {
         ylim=c(yMin, yMax),
         ylab="Score",
         xlab="Case",
-        pch=16,
+        pch=16, cex=cexPt,
         main=c("Deviation of Each Case from Grand Mean",
                 "(Total Sum of Squares)"))
     abline(h=g_mean, lty="dotted", lwd=2, col="grey")
     segments(1:n_total, g_mean, 1:n_total, anova.data.i$score, lty="dotted",
             col="red", lwd=2)
 
+    # Plot sums of squares
+    anova.SS <- matrix(c(SSb, SSw), 2, 1)
+    rownames(anova.SS) <- c("Between", "Within")
+    colnames(anova.SS) <- c("SS")
+    barplot(anova.SS,
+            xlab="", ylab="",
+            col=c(rgb(1,0.5,0.5,.25),rgb(0.5,0.5,1,.25)),
+            legend=rownames(anova.SS), horiz=FALSE,
+            main=c("Partition the Total Sum of Squares",
+                    paste("(Between SS: ",sprintf("%8.2f",SSb),
+                          " / Within SS: ",sprintf("%8.2f",SSw),")",
+                          sep="")))
+            
     # Plot deviation from group mean
     plot(anova.data.i$score,
         ylim=c(yMin, yMax),
         ylab="Score",
         xlab="Case",
-        pch=16,
+        pch=16, cex=cexPt,
         main=c("Deviation of Each Case from Group Mean",
                 "(Within-Group Sum of Squares)"))
     abline(h=g_mean, lty="dotted", lwd=2, col="red")
@@ -119,20 +145,7 @@ server <- function(input, output) {
     segments(1:n_total, rep(gp_means, times=n_gp), 1:n_total, anova.data.i$score,
               col="blue", lty="solid", lwd=2)
 
-    # Plot deviation of group mean from grand mean
-    plot(anova.data.i$score,
-        ylim=c(yMin, yMax),
-        ylab="Score",
-        xlab="Case",
-        pch=16,
-        main=c("Deviation of Group Mean from Grand Mean",
-                "(Between-Group Sum of Squares)"))
-    abline(h=g_mean, lty="dotted", lwd=2, col="red")
-    segments(cumsum(n_gp) - n_gp + 1, gp_means, cumsum(n_gp), gp_means,
-              col="black", lwd=2)
-    segments(1:n_total, g_mean, 1:n_total, rep(gp_means, times=n_gp),
-              col="red", lty="solid", lwd=2)
-
+            
     # Plot F distribution
     plot(FRange,Fd,type="l", 
           xlab="F statistic",
@@ -147,20 +160,23 @@ server <- function(input, output) {
         adj=c(0.5,1))
     abline(v=anova.F, lwd=1, col="red")
     text(anova.F, FdMax*.5, paste("Sample F\n",sprintf("%3.2f",anova.F),sep=""))
-              
-    # Plot sums of squares
-    anova.SS <- matrix(c(SSb, SSw), 2, 1)
-    rownames(anova.SS) <- c("Between", "Within")
-    colnames(anova.SS) <- c("SS")
-    barplot(anova.SS,
-            xlab="", ylab="",
-            col=c(rgb(1,0.5,0.5,.25),rgb(0.5,0.5,1,.25)),
-            legend=rownames(anova.SS), horiz=TRUE,
-            main=c("Partition the Total Sum of Squares",
-                    paste("(Between SS: ",sprintf("%8.2f",SSb),
-                          " / Within SS: ",sprintf("%8.2f",SSw),")",
-                          sep="")))
 
+              
+    # Plot deviation of group mean from grand mean
+    plot(anova.data.i$score,
+        ylim=c(yMin, yMax),
+        ylab="Score",
+        xlab="Case",
+        pch=16, cex=cexPt,
+        main=c("Deviation of Group Mean from Grand Mean",
+                "(Between-Group Sum of Squares)"))
+    abline(h=g_mean, lty="dotted", lwd=2, col="red")
+    segments(cumsum(n_gp) - n_gp + 1, gp_means, cumsum(n_gp), gp_means,
+              col="black", lwd=2)
+    segments(1:n_total, g_mean, 1:n_total, rep(gp_means, times=n_gp),
+              col="red", lty="solid", lwd=2)
+
+              
             
   })
 }
