@@ -26,26 +26,51 @@ yAxis_min <- sdC_max*score_min - gp_means_min
 # UI
 ui <- fluidPage(
   titlePanel("Illustrate the idea of residual and sum of squares in one-way ANOVA"),
-  sidebarLayout(
-      sidebarPanel(p("Change the following and see how the residuals change:"),
-                   h6("Means:"),
-                   sliderInput('m1', "Group 1", 
-                      min=gp_means_min, max=gp_means_max, value=gp_means[1], step=1),
-                   sliderInput('m2', "Group 2", 
-                      min=gp_means_min, max=gp_means_max, value=gp_means[2], step=1),
-                   sliderInput('m3', "Group 3", 
-                      min=gp_means_min, max=gp_means_max, value=gp_means[3], step=1),
-                   sliderInput('m4', "Group 4", 
-                      min=gp_means_min, max=gp_means_max, value=gp_means[4], step=1),
-                   br(),
-                   h6("Within Group Variation"),
-                   sliderInput('sdC', 
-                    "Increase/decrease variation within a group by this factor",
-                      min=sdC_min, max=sdC_max, value=1, step=.05)
-                  ),
-      mainPanel(plotOutput('plot', height="600px"))
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("This demonstration shows how the two sums of squares, ",
+          "within and between, are computed. You can change the group mean",
+          " of each group and see how the deviations of each case, the ",
+          " two sums of squares, and hence the sample F ratio, change."),
+        p("You can also change within group variation by a factor. For example,",
+          "if you set the factor to 2, the deviation of each case from the ",
+          "group mean will be doubled (multiplied by 2). This increases the ",
+          "within group variation and you can see how the F ratio is affected."),
+        p("Scenarios to explore: (1) What if the group means become more and more",
+          "similar? (2) What if the group means do not change, but the within ",
+          "group variation becomes smaller and smaller (by decreasing the factor)?",
+          "What if the group variation becomes larger and larger?")
+        ),
+      fluidRow(
+        column(4,
+          wellPanel(
+            p("Change the following and see how the residuals change:"),
+               h6("Means:"),
+               sliderInput('m1', "Group 1", 
+                  min=gp_means_min, max=gp_means_max, value=gp_means[1], step=1),
+               sliderInput('m2', "Group 2", 
+                  min=gp_means_min, max=gp_means_max, value=gp_means[2], step=1),
+               sliderInput('m3', "Group 3", 
+                  min=gp_means_min, max=gp_means_max, value=gp_means[3], step=1),
+               sliderInput('m4', "Group 4", 
+                  min=gp_means_min, max=gp_means_max, value=gp_means[4], step=1),
+               br(),
+               h6("Within Group Variation"),
+               sliderInput('sdC', 
+                "Increase/decrease variation within a group by this factor",
+                  min=sdC_min, max=sdC_max, value=1, step=.05)
+              )
+          ),
+        column(8,
+          plotOutput('plot', height="600px")
+          )
+        )
+      )
     )
-)
+  )
+
+
 
 # Server
 server <- function(input, output, session) {
