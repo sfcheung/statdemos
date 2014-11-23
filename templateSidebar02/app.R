@@ -1,6 +1,7 @@
 # [Brief description]
 # A template for sidebar panel layout with 
-# one description panel below the title.
+# one description panel below the title,
+# and one bottom panel at the end.
 # To run in R: runGitHub("statDemos","sfcheung",subdir="[folder name]")
 
 # Global variables
@@ -30,6 +31,13 @@ ui <- fluidPage(
         column(8,
           plotOutput('plot')
           )
+        )
+      )
+    ),
+  fluidRow(
+    column(12,
+      wellPanel(
+        h4("Bottom panel")
         )
       )
     )

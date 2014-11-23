@@ -30,7 +30,8 @@ ui <- fluidPage(
     column(12,
       wellPanel(
         p("This demonstration shows how the two sums of squares, ",
-          "within and between, are computed. You can change the group mean",
+          "within and between, are computed in one-way between group ANOVA.",
+          " You can change the group mean",
           " of each group and see how the deviations of each case, the ",
           " two sums of squares, and hence the sample F ratio, change."),
         p("You can also change within group variation by a factor. For example,",
@@ -64,6 +65,20 @@ ui <- fluidPage(
           ),
         column(8,
           plotOutput('plot', height="600px")
+          )
+        )
+      )
+    ),
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("The latest version of the code can be found at ",
+          a("statDemos at GitHub", 
+            href="https://github.com/sfcheung/statDemos/tree/master/ANOVAResidual"),
+          "."
+          ),
+        p("The whole repository can be downloaded from GitHub and run in R by",
+          code("runGitHub(\"statDemos\",\"sfcheung\",subdir=\"ANOVAResidual\")")
           )
         )
       )
