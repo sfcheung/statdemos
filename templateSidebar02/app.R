@@ -37,7 +37,14 @@ ui <- fluidPage(
   fluidRow(
     column(12,
       wellPanel(
-        h4("Bottom panel")
+        p("The latest version of the code can be found at ",
+          a("statDemos at GitHub", 
+            href="https://github.com/sfcheung/statDemos/...."),
+          "."
+          ),
+        p("The whole repository can be downloaded from GitHub and run in R by",
+          code("runGitHub(\"statDemos\",\"sfcheung\",subdir=\"....\")")
+          )
         )
       )
     )

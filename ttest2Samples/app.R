@@ -10,27 +10,81 @@ sd1def <- 6
 sd2def <- 7
 alphadef <- .05
 
-# UI
 ui <- fluidPage(
   titlePanel("Illustrate two-sample t test"),
-  sidebarLayout(
-      sidebarPanel(p("Enter the required information:"),
-                   h6("Level of significance (two-tailed):"),
-                   numericInput('alpha', "Alpha", min=.001, max=.25, value=alphadef,
-                                step=.001),
-                   h6("Sample 1:"),
-                   numericInput('n1', "Sample size", value=n1def),
-                   numericInput('m1', "Mean", value=m1def),
-                   numericInput('sd1', "Standard deviation (min .1)", min=.1, step=.1, value=sd1def),
-                   h6("Sample 2:"),
-                   numericInput('n2', "Sample size", value=n2def),
-                   numericInput('m2', "Mean", value=m2def),
-                   numericInput('sd2', "Standard deviation (min .1)", min=.1, step=.1, value=sd2def),
-                   width=3
-                  ),
-      mainPanel(plotOutput('plot', height="600px"))
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("This page illustrates the computation of a two-sample t test.",
+          "You can specify the means, standard deviations, and sample sizes ",
+          "of two samples and see graphically how a t test is conducted ",
+          "to test the hypothesis of no difference in population means.",
+          "Three methods, critical values, p-value, and confidence intervals",
+          "are presented in this demonstration."),
+        p("You can change one value (e.g., the standard deviation of a sample,",
+          "the sample size, etc.) several times ",
+          "and see how a change in this value affects the t test conclusion.")
+        ),
+      fluidRow(
+        column(3,
+          wellPanel(
+             p("Enter the required information:"),
+             h6("Level of significance (two-tailed):"),
+             numericInput('alpha', "Alpha", min=.001, max=.25, value=alphadef,
+                          step=.001),
+             h6("Sample 1:"),
+             numericInput('n1', "Sample size", value=n1def),
+             numericInput('m1', "Mean", value=m1def),
+             numericInput('sd1', "Standard deviation (min .1)", min=.1, step=.1, value=sd1def),
+             h6("Sample 2:"),
+             numericInput('n2', "Sample size", value=n2def),
+             numericInput('m2', "Mean", value=m2def),
+             numericInput('sd2', "Standard deviation (min .1)", min=.1, step=.1, value=sd2def)
+            )
+          ),
+        column(9,
+          plotOutput('plot', height="600px")
+          )
+        )
+      )
+    ),
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("The latest version of the code can be found at ",
+          a("statDemos at GitHub", 
+            href="https://github.com/sfcheung/statDemos/tree/master/ttest2Samples"),
+          "."
+          ),
+        p("The whole repository can be downloaded from GitHub and run in R by",
+          code("runGitHub(\"statDemos\",\"sfcheung\",subdir=\"ttest2Samples\")")
+          )
+        )
+      )
     )
-)
+  )
+
+# UI
+# ui <- fluidPage(
+  # titlePanel("Illustrate two-sample t test"),
+  # sidebarLayout(
+      # sidebarPanel(p("Enter the required information:"),
+                   # h6("Level of significance (two-tailed):"),
+                   # numericInput('alpha', "Alpha", min=.001, max=.25, value=alphadef,
+                                # step=.001),
+                   # h6("Sample 1:"),
+                   # numericInput('n1', "Sample size", value=n1def),
+                   # numericInput('m1', "Mean", value=m1def),
+                   # numericInput('sd1', "Standard deviation (min .1)", min=.1, step=.1, value=sd1def),
+                   # h6("Sample 2:"),
+                   # numericInput('n2', "Sample size", value=n2def),
+                   # numericInput('m2', "Mean", value=m2def),
+                   # numericInput('sd2', "Standard deviation (min .1)", min=.1, step=.1, value=sd2def),
+                   # width=3
+                  # ),
+      # mainPanel(plotOutput('plot', height="600px"))
+    # )
+# )
 
 # Server
 server <- function(input, output) {

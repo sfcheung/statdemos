@@ -25,27 +25,40 @@ models <- data.frame(b0=rep(NA,5), b1=rep(NA,5),
                       RSS=rep(NA,5), Rsquared=rep(NA,5))
 models[1,] <- c(b0def, b1def, 0, 0)
 
-# UI
 ui <- fluidPage(
   titlePanel("Illustrate the residual sum of squares for a linear model"),
-  sidebarLayout(
-      sidebarPanel(h4(paste("Set the intercept and slope for your model, and ",
-                            "see how the residual sum of squares changes:",
-                            sep="")),
-                   br(),
-                   sliderInput('b0',
-                               label=h5("Intecept (b0)"),
-                               min=min(outcome)-10, max=max(outcome)+10, value=b0def, step=.5,
-                               ticks=TRUE),
-                   sliderInput('b1',
-                               label=h5("slope (b1)"),
-                               min=-30, max=30, value=b1def, step=.5,
-                               ticks=TRUE)
-                   #br(),
-                   #h4("Models explored"),
-                   #tableOutput("modelsTab")
-                  ),
-      mainPanel(
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("This page illustrates how the \"badness\" of fit of a linear ",
+          "model (a straight line) can be measured by the sums of squared",
+          "residuals. You can try different models and examine how the ",
+          "sum of squared residuals and the R-squared change."),
+        p("The starting model when you load this page (a horizontal line",
+          "with intercept equal to", b0def, ", the mean of the outcome ",
+          "variable) is the baseline model, with R-squared = 0.")
+        ),
+      fluidRow(
+        column(4,
+          wellPanel(
+            h4(paste("Set the intercept and slope for your model, and ",
+              "see how the residual sum of squares changes:",
+              sep="")),
+            br(),
+            sliderInput('b0',
+              label=h5("Intecept (b0)"),
+              min=min(outcome)-10, max=max(outcome)+10, value=b0def, step=.5,
+              ticks=TRUE),
+            sliderInput('b1',
+              label=h5("slope (b1)"),
+              min=-30, max=30, value=b1def, step=.5,
+              ticks=TRUE)
+            #br(),
+            #h4("Models explored"),
+            #tableOutput("modelsTab")
+            )
+          ),
+        column(8,
           h5(paste("The \"best\" (least squares) model: Residual sum of squares=", 
               format(lm.rss, nsmall=2), 
               " ; R-squared=",
@@ -55,9 +68,59 @@ ui <- fluidPage(
                   "if it is not the least squares model. ",
                   "This is not an error in computation.", sep="")),
           plotOutput("plot")
+          )
         )
+      )
+    ),
+  fluidRow(
+    column(12,
+      wellPanel(
+        p("The latest version of the code can be found at ",
+          a("statDemos at GitHub", 
+            href="https://github.com/sfcheung/statDemos/tree/master/lmResidual"),
+          "."
+          ),
+        p("The whole repository can be downloaded from GitHub and run in R by",
+          code("runGitHub(\"statDemos\",\"sfcheung\",subdir=\"lmResidual\")")
+          )
+        )
+      )
     )
-)
+  )
+
+# UI
+# ui <- fluidPage(
+  # titlePanel("Illustrate the residual sum of squares for a linear model"),
+  # sidebarLayout(
+      # sidebarPanel(h4(paste("Set the intercept and slope for your model, and ",
+                            # "see how the residual sum of squares changes:",
+                            # sep="")),
+                   # br(),
+                   # sliderInput('b0',
+                               # label=h5("Intecept (b0)"),
+                               # min=min(outcome)-10, max=max(outcome)+10, value=b0def, step=.5,
+                               # ticks=TRUE),
+                   # sliderInput('b1',
+                               # label=h5("slope (b1)"),
+                               # min=-30, max=30, value=b1def, step=.5,
+                               # ticks=TRUE)
+                   # #br(),
+                   # #h4("Models explored"),
+                   # #tableOutput("modelsTab")
+                  # ),
+      # mainPanel(
+          # h5(paste("The \"best\" (least squares) model: Residual sum of squares=", 
+              # format(lm.rss, nsmall=2), 
+              # " ; R-squared=",
+              # sprintf("%3.2f", lm.rsq), sep="")),
+          # h5(textOutput("rss")),
+          # p(paste("The R-squared for your model can be less than 0 or greater 1 ",
+                  # "if it is not the least squares model. ",
+                  # "This is not an error in computation.", sep="")),
+          # plotOutput("plot")
+        # )
+    # )
+# )
 
 # Server
 server <- function(input, output) {
