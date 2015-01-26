@@ -1,19 +1,19 @@
 # Mediation: The effect of scale changes on effect size measures
 # To run in R: runGitHub("statDemos","sfcheung",subdir="mediationStdES")
 
-# Work in progress. Not yet fininshed.
+# Work in progress. Not yet finished.
 
 # Global variables
 
 # Initial model
 
 set.seed(9879713)
-x2m <- 1
+n <- 1000
+x2m <- 10
 m2y <- 80
-work_hour_raw <- rnorm(100, 8, 2)
-output_weight_raw <- 10 + x2m*work_hour_raw + rnorm(100, 0, 10)
-salary_raw <- 3000 + m2y*output_weight_raw + rnorm(100, 0, 50)
-
+work_hour_raw <- 8 + 2*scale(rnorm(n))
+output_weight_raw <- 10 + x2m*work_hour_raw + scale(rnorm(n, 0, 10),scale=FALSE)
+salary_raw <- 3000 + m2y*output_weight_raw + scale(rnorm(n, 0, 50),scale=FALSE)
 
 # UI
 ui <- fluidPage(
@@ -21,21 +21,23 @@ ui <- fluidPage(
   fluidRow(
     column(12,
       wellPanel(
-        h4("Description Panel")
+        h4("Work in progress. Not yet ready."),
+        h4("Description Panel", br(), 
+            a("Reference", href="http://www.apa.org/pubs/journals/features/met-16-2-93.pdf"))
         ),
       fluidRow(
         column(4,
           wellPanel(
             h4("Sibebar Panel"),
             br(),
-            radioButtons('time_unit', 'Time Unit for Work Hour (IV)',
+            radioButtons('time_unit', 'IV Unit: Time Unit for Work Duration',
                         c('Second'='second',
                           'Minute'='minute',
                           'Hour'='hour'), selected="hour", inline=TRUE),
-            radioButtons('weight_unit', 'Weight Unit for Output in Weight (Mediator)',
+            radioButtons('weight_unit', 'Mediator Unit: Weight Output in Weight',
                          c('Gram'='gram',
                            'Kilogram'='kilogram'), selected="kilogram", inline=TRUE),
-            radioButtons('money_unit', 'Money Unit for Salary (DV)',
+            radioButtons('money_unit', 'DV Unit: Money Unit for Salary (DV)',
                          c('MOP'='mop',
                            'USD'='usd'), selected="mop", inline=TRUE),
             br(),
@@ -44,12 +46,14 @@ ui <- fluidPage(
             )
           ),
         column(8,
-          h5("Unstandardized Effect of Work Hour (IV) on Output in Weight (Mediator)"),
+          h4("a Path: Unstandardized Effect of IV (Work Hour) on Mediator (Output in Weight)"),
           verbatimTextOutput('resultsX2M'),
-          h5("Unstandardized Effect of Output in Weight (Mediator) on Salary (DV)"),
+          h4("b Path: Unstandardized Effect of Output in Mediator (Weight) on DV (Salary)"),
           verbatimTextOutput('resultsM2Y'),
-          h5("Unstandardized Indirect Effect of Work Hour (IV) on Salary (DV)"),
-          verbatimTextOutput('resultsIndirect')
+          h4("Product a*b: Unstandardized Indirect Effect of IV (Work Hour) on DV (Salary)"),
+          verbatimTextOutput('resultsIndirect'),
+          h4("Effect Size Measures of Indirect Effect (a*b) of IV (Work Hour) on DV (Salary)"),
+          verbatimTextOutput('resultsES')
         )
         )
       )
@@ -87,9 +91,18 @@ server <- function(input, output) {
     model_y <- (lm(salary ~ output_weight + work_hour))
     coef_x2m <- coef(model_m)[2]
     coef_m2y <- coef(model_y)[2]
-    output$resultsM2Y <- renderPrint(print(coef_m2y, digits=4))
-    output$resultsIndirect <- renderPrint(print(coef_x2m*coef_m2y, digits=4))
-    print(coef_x2m, digits=4)
+    x2y_ind <- coef_x2m*coef_m2y
+    x_sd <- sd(work_hour)
+    y_sd <- sd(salary)
+    es_pstd <- x2y_ind/y_sd
+    es_cstd <- x_sd*x2y_ind/y_sd
+    es_all <- data.frame(ES=c(es_pstd,es_cstd))
+    rownames(es_all) <- c("Partially Standardized Indirect Effect",
+                          "Completely Standardized Indirect Effect")
+    output$resultsM2Y <- renderPrint(print(round(coef_m2y, 4)))
+    output$resultsIndirect <- renderPrint(print(round(coef_x2m*coef_m2y, 4)))
+    output$resultsES <- renderPrint(round(es_all,4))
+    print(round(coef_x2m,4))
     })
   }
 
