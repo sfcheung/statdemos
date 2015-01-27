@@ -3,6 +3,24 @@
 
 # Work in progress. Not yet finished.
 
+# Used to generate the diagram
+# library(semPlot)
+# work_hour <- rnorm(100)
+# output_weight <- rnorm(100)
+# salary <- rnorm(100)
+# lm_m <- lm(output_weight ~ work_hour)
+# lm_y <- lm(salary ~ output_weight)
+# semPaths(lm_m + lm_y, what="paths",
+         # rotation=2, residuals=FALSE, intercepts=FALSE, 
+         # layout="tree2", nCharNodes=0,
+         # nodeLabels=c("Work\nTime", "Output\nWeight", "Salary"),
+         # sizeMan=10,
+         # edgeLabels=c("a","b"),
+         # edge.label.cex=2,
+         # edge.color="black",
+         # edge.width=4, node.width=1)
+
+
 # Global variables
 
 # Initial model
@@ -83,16 +101,16 @@ server <- function(input, output) {
                                  gram=1000, kilogram=1)
     salary_unit <- switch(input$money_unit,
                           mop=1, usd=1/8)
-    work_hour <- work_hour_raw * work_hour_unit
+    work_time <- work_hour_raw * work_hour_unit
     output_weight <- output_weight_raw * output_weight_unit
     salary <- salary_raw * salary_unit
-    mean(cbind(work_hour, output_weight, salary))
-    model_m <- (lm(output_weight ~ work_hour))
-    model_y <- (lm(salary ~ output_weight + work_hour))
+    mean(cbind(work_time, output_weight, salary))
+    model_m <- lm(output_weight ~ work_time)
+    model_y <- lm(salary ~ output_weight + work_time)
     coef_x2m <- coef(model_m)[2]
     coef_m2y <- coef(model_y)[2]
     x2y_ind <- coef_x2m*coef_m2y
-    x_sd <- sd(work_hour)
+    x_sd <- sd(work_time)
     y_sd <- sd(salary)
     es_pstd <- x2y_ind/y_sd
     es_cstd <- x_sd*x2y_ind/y_sd
