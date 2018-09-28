@@ -10,5 +10,4 @@ Collection of demonstrations related to statistics.
 - Renamed to statdemos ("d" changed to lowercase).
 
 2015-03-14
-This repository will not be updated. Demonstrations moved to the `lstatdemo` package:
-https://github.com/sfcheung/lstatdemo
+- This repository will not be updated. Demonstrations moved to the `lstatdemo` package: https://github.com/sfcheung/lstatdemo
