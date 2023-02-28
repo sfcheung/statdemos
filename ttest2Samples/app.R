@@ -51,13 +51,14 @@ ui <- fluidPage(
   fluidRow(
     column(12,
       wellPanel(
+        p("Version 1.0.0"),
         p("The latest version of the code can be found at ",
-          a("statDemos at GitHub", 
-            href="https://github.com/sfcheung/statDemos/tree/master/ttest2Samples"),
+          a("statdemos at GitHub",
+            href="https://github.com/sfcheung/statdemos/tree/master/ttest2Samples"),
           "."
           ),
-        p("The whole repository can be downloaded from GitHub and run in R by",
-          code("runGitHub(\"statDemos\",\"sfcheung\",subdir=\"ttest2Samples\")")
+        p("This app can be run directly by ",
+          code("shiny::runUrl(\"https://github.com/sfcheung/statdemos/raw/master/apps/ttest2Samples.zip\")")
           )
         )
       )
@@ -109,10 +110,10 @@ server <- function(input, output) {
     ciDiffHi <- mDiff + criticalTHi*seDiff
     ciDiffLo <- mDiff - criticalTHi*seDiff
     pvalue <- pt(abs(sampleT), df, lower.tail=FALSE)*2
-    
-    
+
+
     # Set the parameters for the graphs
-    
+
     # For raw scores and sample means
     xLo <- min(m1-3*sd1, m2-3*sd2)
     xHi <- max(m1+3*sd1, m2+3*sd2)
@@ -127,11 +128,11 @@ server <- function(input, output) {
     mh1 <- dnorm(mhRange,m1,se1)
     mh2 <- dnorm(mhRange,m2,se2)
     ymMax <- max(c(mh1,mh2))
-    ifelse(m1 < m2, 
-            {xadj1 <- 1.25; xadj2 <- -.25}, 
+    ifelse(m1 < m2,
+            {xadj1 <- 1.25; xadj2 <- -.25},
             {xadj1 <- -.25; xadj2 <- 1.25}
           )
-    
+
     # For t distribution
     tHi <- max(abs(sampleT)*1.25, qt(1-.0005, df))
     tLo <- -1*tHi
@@ -147,24 +148,24 @@ server <- function(input, output) {
          tph1 <- c(0, tph1, 0)},
         {tphRange <- c(tLo, tphRange, sampleT);
          tph1 <- c(0, tph1, 0)})
-    
+
     # For confidence interval of difference
     diffHi <- max(ciDiffHi,3*seDiff)
     diffLo <- min(ciDiffLo,-3*seDiff)
     diffhRange <- seq(diffLo, diffHi, length.out=100)
     diffh1 <- dnorm(diffhRange,0,seDiff)
     ydiffMax <- max(diffh1)
-    
-    
+
+
     cexAll <- 1
     cexMain <- 1.1
     # Don't know why cex cannot control the magnification of all elements
     # So used cexAll here
     # Generate the plot object
-    
+
     par(mfrow=c(2,2))
     #par(mar=c(5,1,3,1))
-    
+
     # Plot scores distribution
     plot(hRange,h1,type="l", cex.main=cexAll,
           ylim=c(0,yMax),
@@ -178,12 +179,12 @@ server <- function(input, output) {
     abline(v=m1, lwd=4, col="red")
     abline(v=m2, lwd=4, col="blue")
     text(m1, yMax, m1, adj=c(xadj1,1))
-    text(m2, yMax, m2, adj=c(xadj2,1))    
+    text(m2, yMax, m2, adj=c(xadj2,1))
 
     # Plot sample t distribution
-    ifelse(sampleT > 0, 
+    ifelse(sampleT > 0,
             t_sub <- paste("Area to the right is ", sprintf("%5.4f",pvalue/2),
-                          ", p-value=", sprintf("%5.4f",pvalue), 
+                          ", p-value=", sprintf("%5.4f",pvalue),
                           " (rounded)", sep=""),
             ifelse(sampleT < 0,
               t_sub <- paste("Area to the left is ", sprintf("%5.4f",pvalue/2),
@@ -191,7 +192,7 @@ server <- function(input, output) {
                             " (rounded)", sep=""),
               t_sub <- paste("Sample t at the center. p-value = 1."))
           )
-            
+
     plot(thRange,th1,type="l", cex.main=cexAll,
           xlab="t statistic",
           ylab="",yaxt="n", cex.main=cexMain,
@@ -202,10 +203,10 @@ server <- function(input, output) {
     polygon(thRange,th1,col=rgb(0,1,0,.5))
     abline(v=criticalTLo, lwd=1, col="black", lty="dotted")
     abline(v=criticalTHi, lwd=1, col="black", lty="dotted")
-    text(criticalTLo, tMax, 
+    text(criticalTLo, tMax,
         paste("Critical value\n", sprintf("%3.2f",criticalTLo), sep=""),
         adj=c(0.5,1))
-    text(criticalTHi, tMax, 
+    text(criticalTHi, tMax,
         paste("Critical value\n", sprintf("%3.2f",criticalTHi), sep=""),
         adj=c(0.5,1))
     abline(v=sampleT, lwd=1, col="red")
@@ -215,7 +216,7 @@ server <- function(input, output) {
         arrows(sampleT,tMax*.25,ifelse(sampleT > 0, tHi, tLo),tMax*.25,
                lwd=4, length=.125)
       }
-           
+
     # Plot sample mean distribution
     plot(mhRange,mh1,type="l", cex.main=cexAll,
           ylim=c(0,ymMax),
@@ -229,20 +230,20 @@ server <- function(input, output) {
     abline(v=m1, lwd=4, col="red")
     abline(v=m2, lwd=4, col="blue")
     text(m1, ymMax, m1, adj=c(xadj1,1))
-    text(m2, ymMax, m2, adj=c(xadj2,1))    
+    text(m2, ymMax, m2, adj=c(xadj2,1))
 
-    
+
     # Plot the confidence interval
     diff_sub <- paste(format(100*(1-alpha), digits=2),"% confidence interval:",
                       format(ciDiffLo,digits=2)," to ", format(ciDiffHi,digits=2),
                       sep="")
     diff_sub <- paste("The ", format(100*(1-alpha), digits=2),
                       "% confidence interval ",
-                      ifelse(ciDiffHi < 0 || ciDiffLo > 0, 
+                      ifelse(ciDiffHi < 0 || ciDiffLo > 0,
                               "does not contain",
                               "contains"),
                       " zero", sep="")
-                     
+
     plot(diffhRange,diffh1,type="l", cex.main=cexAll,
           xlab="Sample mean difference (Mean 2 - Mean 1)",
           ylab="",yaxt="n", cex.main=cexMain,
@@ -257,7 +258,7 @@ server <- function(input, output) {
     segments(ciDiffHi, 0, ciDiffHi, ydiffMax*.5, lwd=2, col="black")
     text(ciDiffLo, ydiffMax*.5, format(ciDiffLo, digits=2), adj=c(.5,0))
     text(ciDiffHi, ydiffMax*.5, format(ciDiffHi, digits=2), adj=c(.5,0))
-    arrows(ciDiffLo, ydiffMax*.25, ciDiffHi, ydiffMax*.25, 
+    arrows(ciDiffLo, ydiffMax*.25, ciDiffHi, ydiffMax*.25,
            code=3, lwd=4, length=.125)
   })
 }
