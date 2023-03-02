@@ -29,7 +29,9 @@ ui <- fluidPage(
           "of a case depends on both its distance from ",
           "the centroid and the covariance between variables. ",
           "Click on the plot to position the red diamond point. ",
-          "Its distance from the centroid and its hat value ",
+          "Its literal distance from the centroid",
+          "(not taking into account the covariance)",
+          "and its hat value ",
           "will be updated.")
         ),
       fluidRow(
@@ -61,7 +63,8 @@ ui <- fluidPage(
       wellPanel(
           h5("Technical details:"),
           p("The two ellipses are positions one SD and two SDs from the centroid, respectively. Drawn by psych::ellipses()."),
-          p("The number of cases is 500 plus the red diamond point (i.e., 501).")
+          p("The number of cases is 500 plus the red diamond point (i.e., 501)."),
+          p("The distance to the centroid does not take into account the covariance.")
         ),
       wellPanel(
         p("Version 1.0.0"),
