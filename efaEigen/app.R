@@ -73,8 +73,8 @@ modelnamelist <- c("mod0a", "mod1a", "mod2a", "mod3a", "mod4a",
                    "mod2b", "mod3b", "mod4b")
 cfaplist <- c(cfap_0a, cfap_1a, cfap_2a, cfap_3a, cfap_4a,
               cfap_2b, cfap_3b, cfap_4b)
-  
-n <- 1000
+
+n <- 500
 lambda0 <- .5
 
 data1 <- lavaan::simulateData(model = gsub("@", lambda0, cfap_0a),
@@ -93,6 +93,20 @@ data4 <- lavaan::simulateData(model = gsub("@", lambda0, cfap_3a),
 eigen_null <- eigen(cor(data1), only.values = TRUE)$values
 
 datalist <- list(data1, data2, data3, data4)
+
+gen_eigen_null <- function(n, nrep = 1000, seed = NULL) {
+    if (!is.null(seed)) set.seed(seed)
+    dat_null <- t(replicate(nrep,
+                    eigen(cor(MASS::mvrnorm(n, mu = rep(0, 12), diag(12))), only.values = TRUE)$values))
+    eigen_null_mean <- colMeans(dat_null)
+    eigen_null_95 <- apply(dat_null, 2, quantile, probs = .95)
+    list(mean = eigen_null_mean,
+         p95 = eigen_null_95)
+  }
+
+eigen_null_all <- gen_eigen_null(n = n, seed = 51543)
+eigen_null <- eigen_null_all$mean
+eigen_null_p95 <- eigen_null_all$p95
 
 update_datas <- function(modelselected,
                          cfaplist,
@@ -156,9 +170,10 @@ my_scree <- function(data, main, ...) {
          type = "lines",
          main = main,
          npcs = 12,
+         cex = 2,
          ...)
   }
-  
+
 # UI
 ui <- fluidPage(
   titlePanel("Exploratory Factor Analysis and Eigenvalues: Illustration"),
@@ -170,8 +185,9 @@ ui <- fluidPage(
             "pre-determined",
             "models and compare their eigenvalues by scree plots.",
             "You can also specify the standardized factor loadings."),
+          p("Change the sample size and see how the three lines change."),
           p("After you selected the options, click 'Update the results'.",
-            "A dataset of 1000 cases will be generated from each model",
+            "A dataset of cases equal to sample size n will be generated from each model",
             "(all factors are ",
             "uncorrelated).")
         ))),
@@ -206,6 +222,10 @@ ui <- fluidPage(
 #      sliderInput("efaphi4", "Factor Correlation(s)", .0, .9, .0))
 #      ),
   fluidRow(
+    column(12, align="center",
+      sliderInput("n", label = "Sample Size (n)", min = 50, max = 1000, value = 500, step = 50))
+    ),
+  fluidRow(
     column(12, submitButton("Update the results"))
     ),
   fluidRow(column(12, plotOutput("plot"))),
@@ -214,19 +234,24 @@ ui <- fluidPage(
       column(12,
         wellPanel(
           p("The red line is the line of eigenvalue = 1. The number of ",
-            "eigenvalues above this line is the number of factors suggested by ",
+            "eigenvalues (circles) above this line is the number of factors suggested by ",
             "the K1 rule."),
-          p("The blue line is the line of eigenvalues when all items are ",
-            "uncorrelated. The number of eigenvalues above this line is the ",
+          p("The blue line with crosses is the line of mean eigenvalues when all items are ",
+            "uncorrelated. The number of eigenvalues (circles) above this line is the ",
             "number of factors suggested by the original version of ",
-            "parallel analysis.")
+            "parallel analysis."),
+          p("The dark green line with triangles is the line of 95th percentiles of eigenvalues when all items are ",
+            "uncorrelated. The number of eigenvalues (circles) above this line is the ",
+            "number of factors suggested by an alternative version of ",
+            "parallel analysis."),
+          p("Note that the dark green lines (triangles) are always higher than the blue lines (crosses).")
           )
         )
     ),
   fluidRow(
     column(12,
       wellPanel(
-        p("Version 1.2.1"),
+        p("Version 1.2.3"),
         p("The latest version of the code can be found at ",
           a("statdemos at GitHub",
             href = "https://github.com/sfcheung/statdemos/tree/master/efaEigen"),
@@ -246,7 +271,7 @@ server <- function(input, output) {
                                            input$efamodel3, input$efamodel4),
                                            cfaplist = cfaplist,
                                            modelnamelist = modelnamelist,
-                                           n = n,
+                                           n = input$n,
                                            lambdas = c(input$efalambda1,
                                                        input$efalambda2,
                                                        input$efalambda3,
@@ -269,6 +294,7 @@ server <- function(input, output) {
     })
   output$plot2 <- renderPlot({
       datas <<- updatedatas_i()
+      eigen_null_full <- gen_eigen_null(n = input$n, seed = 51543)
       eigenmax <- ceiling(
           max(sapply(datas, function(x) eigen(cor(x), only.values = TRUE)$values))
           )
@@ -276,16 +302,20 @@ server <- function(input, output) {
       par(mfrow = c(1, 4))
       my_scree(datas[[1]], "Model 1", ylim = c(0, eigenmax))
       abline(h = 1, col = "red")
-      points(1:12, eigen_null, type = "b", col = "blue", cex = .5)
+      points(1:12, eigen_null_full$mean, type = "b", col = "blue", cex = 2, pch = 4)
+      points(1:12, eigen_null_full$p95, type = "b", col = "#015501", cex = 2, pch = 2)
       my_scree(datas[[2]], "Model 2", ylim = c(0, eigenmax))
       abline(h = 1, col = "red")
-      points(1:12, eigen_null, type = "b", col = "blue", cex = .5)
+      points(1:12, eigen_null_full$mean, type = "b", col = "blue", cex = 2, pch = 4)
+      points(1:12, eigen_null_full$p95, type = "b", col = "#015501", cex = 2, pch = 2)
       my_scree(datas[[3]], "Model 3", ylim = c(0, eigenmax))
       abline(h = 1, col = "red")
-      points(1:12, eigen_null, type = "b", col = "blue", cex = .5)
+      points(1:12, eigen_null_full$mean, type = "b", col = "blue", cex = 2, pch = 4)
+      points(1:12, eigen_null_full$p95, type = "b", col = "#015501", cex = 2, pch = 2)
       my_scree(datas[[4]], "Model 4", ylim = c(0, eigenmax))
       abline(h = 1, col = "red")
-      points(1:12, eigen_null, type = "b", col = "blue", cex = .5)
+      points(1:12, eigen_null_full$mean, type = "b", col = "blue", cex = 2, pch = 4)
+      points(1:12, eigen_null_full$p95, type = "b", col = "#015501", cex = 2, pch = 2)
     })
   }
 
