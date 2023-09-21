@@ -26,9 +26,13 @@ gen_sample_i <- function(rho = 0,
     cbind(x, y)
   }
 
+r2z <- function(x) {
+    .5 * log((1 + x) / (1 - x))
+  }
+
 # UI
 ui <- fluidPage(
-    titlePanel("Sampling Distribution of Pearson's r (Work-In-Progress)"),
+    titlePanel("Sampling Distribution of Pearson's r"),
     fluidRow(
       column(12,
         wellPanel(
@@ -42,7 +46,10 @@ ui <- fluidPage(
             p("How to Use it:"),
             p("1. Set the sample size, sample r, and level of significance."),
             p("2. Click 'Update the Plots'."),
-            p("3. Examine the plots.")
+            p("3. Examine the plots."),
+            p("(This app will be discussed in the class to demonstrate",
+              "the ideas of sampling distribution, p-value, critical value,",
+              "and transformation.)")
         ))),
     fluidRow(
         column(6, align = "center",
@@ -50,7 +57,7 @@ ui <- fluidPage(
                       label = "Sample Size (n)",
                       min = 10,
                       max = 500,
-                      value = 50,
+                      value = 10,
                       step = 10)),
         column(6, align = "center",
           sliderInput("rho", label = "Population Correlation",
@@ -65,7 +72,7 @@ ui <- fluidPage(
                       label = "Sample Correlation (r)",
                       min = -.99,
                       max = .99,
-                      value = .50,
+                      value = .40,
                       step = .01)),
         column(6, align = "center",
           sliderInput("alpha",
@@ -96,9 +103,13 @@ ui <- fluidPage(
           )
       ),
     fluidRow(
+        column(6, plotOutput("qq1")),
+        column(6, plotOutput("qq2"))
+      ),
+    fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.0.1"),
+          p("Version 0.1.0"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
               href = "https://github.com/sfcheung/statdemos/tree/master/rDistribution"),
@@ -106,7 +117,11 @@ ui <- fluidPage(
             ),
           p("This app can be run directly by ",
             code("shiny::runUrl(\"https://github.com/sfcheung/statdemos/raw/master/apps/rDistribution.zip\")")
-            )
+            ),
+          p("If you discovered any issues, such as bugs,",
+            "it would be nice if you report them at",
+            a("GitHub",
+              href = "https://github.com/sfcheung/statdemos/issues"))
           )
         )
       )
@@ -120,6 +135,14 @@ server <- function(input, output) {
                                           r_only = TRUE))
     output$hist1 <- renderPlot({
         rs <- update_samples()
+        r_t <- input$r * sqrt((input$n - 2) / (1 - input$r^2))
+        r_p <- 2 * pt(abs(r_t),
+                      df = input$n - 2,
+                      lower.tail = FALSE)
+        r_p <- ecdf(rs)(input$r)
+        r_p <- ifelse(r_p > .50,
+                      2 * (1 - r_p),
+                      2 * r_p)
         hist(rs,
              breaks = 50,
              col = "grey90",
@@ -137,24 +160,25 @@ server <- function(input, output) {
         cut_t_lo <- -1 * cut_t / sqrt(input$n - 2 + cut_t^2)
         cut_t_hi <- -1 * cut_t_lo
         tmp1 <- par("usr")
-        tmp2 <- (tmp1[4] - tmp1[3]) / 2
+        y_length <- tmp1[4] - tmp1[3]
+        tmp2 <- y_length / 2
         segments(x0 = cut_lo,
                  y0 = tmp1[3],
-                 y1 = tmp2 * 1,
+                 y1 = tmp2 * .75,
                  col = "red")
         segments(x0 = cut_hi,
                  y0 = tmp1[3],
-                 y1 = tmp2 * 1,
+                 y1 = tmp2 * .75,
                  col = "red")
         segments(x0 = cut_t_lo,
-                 y0 = tmp2 * 1,
+                 y0 = tmp2 * 1.25,
                  y1 = tmp1[4],
-                 col = "black",
+                 col = "blue",
                  lwd = 2)
         segments(x0 = cut_t_hi,
-                 y0 = tmp2 * 1,
+                 y0 = tmp2 * 1.25,
                  y1 = tmp1[4],
-                 col = "black",
+                 col = "blue",
                  lwd = 2)
         arrows(x0 = cut_lo,
                y0 = tmp2 * .25,
@@ -169,13 +193,22 @@ server <- function(input, output) {
         arrows(x0 = cut_t_lo,
                y0 = tmp2 * 1.75,
                x1 = cut_t_lo - (cut_t_lo - tmp1[1]) * .5,
-               col = "black",
+               col = "blue",
                length = .10)
         arrows(x0 = cut_t_hi,
                y0 = tmp2 * 1.75,
                x1 = cut_t_hi + (tmp1[2] - cut_t_hi) * .5,
-               col = "black",
+               col = "blue",
                length = .10)
+        if (input$r != input$rho) {
+            arrows(x0 = input$r,
+                   y0 = tmp2 * .75,
+                   x1 = ifelse(input$r > input$rho,
+                               input$r + (tmp1[2] - input$r) * .5,
+                               input$r - (input$r - tmp1[1]) * .5),
+                   col = "black",
+                   length = .10)
+          }
         abline(v = input$r,
                col = "blue",
                lwd = 2,
@@ -199,9 +232,11 @@ server <- function(input, output) {
         cut_t_hi_str <- formatC(cut_t_hi, digits = 2, format = "f")
         cut_t_lo_str <- paste0("t Critical:\n", cut_t_lo_str)
         cut_t_hi_str <- paste0("t Critical:\n", cut_t_hi_str)
-        sig <- (abs(input$r) > abs(cut_lo))
+        r_p05 <- r_p / 2
+        r_p05_str <- formatC(r_p05, digits = 3, format = "f")
+        sig <- ((input$r < cut_lo) || (input$r > cut_hi))
         legend(x = input$r,
-               y = .50 * (tmp1[4] - tmp1[3]),
+               y = .50 * y_length,
                legend = paste0("r: ",
                                r_str),
                text.col = "black",
@@ -211,31 +246,41 @@ server <- function(input, output) {
                yjust = .5,
                adj = c(0.25, 0.25))
         text(x = cut_lo,
-             y = .25 * (tmp1[4] - tmp1[3]),
+             y = .25 * y_length,
              labels = paste0("Lower\nCutoff\n",
                             cut_lo_str))
         text(x = cut_hi,
-             y = .25 * (tmp1[4] - tmp1[3]),
+             y = .25 * y_length,
              labels = paste0("Upper\nCutoff\n",
                             cut_hi_str))
         text(x = cut_t_lo,
-             y = .75 * (tmp1[4] - tmp1[3]),
+             y = .75 * y_length,
              labels = cut_t_lo_str)
         text(x = cut_t_hi,
-             y = .75 * (tmp1[4] - tmp1[3]),
+             y = .75 * y_length,
              labels = cut_t_hi_str)
-      })
-    # output$hist2 <- renderPlot({
-    #     rs <- update_samples()
-    #     qqnorm(rs,
-    #            main = paste("QQ-Plot of the",
-    #                         nrep,
-    #                         "Simulated Sample rs"))
-    #     qqline(rs)
-    #   })
+        if (input$r != input$rho) {
+          text(x = input$r,
+               y = tmp2 * .75,
+               labels = ifelse(input$r > input$rho,
+                               paste0("Area to right:\n",
+                                      r_p05_str),
+                               paste0("Area to left:\n",
+                                      r_p05_str)),
+               adj = ifelse(input$r > 0,
+                            c(0, 0),
+                            c(1, 0)))
+          }
+    })
     output$hist2 <- renderPlot({
       rs <- update_samples()
-      zs <- .5 * log((1 + rs)/(1 - rs))
+      zs <- r2z(rs)
+      z_rho <- r2z(input$rho)
+      z <- r2z(input$r)
+      z_p <- ecdf(zs)(z)
+      z_p <- ifelse(z_p > .50,
+                    2 * (1 - z_p),
+                    2 * z_p)
       hist(zs,
            breaks = 50,
            col = "grey90",
@@ -252,24 +297,25 @@ server <- function(input, output) {
       cut_t_lo <- -1 * cut_t / sqrt(input$n - 3)
       cut_t_hi <- -1 * cut_t_lo
       tmp1 <- par("usr")
-      tmp2 <- (tmp1[4] - tmp1[3]) / 2
+      y_length <- tmp1[4] - tmp1[3]
+      tmp2 <- y_length / 2
       segments(x0 = cut_lo,
                y0 = tmp1[3],
-               y1 = tmp2 * 1,
+               y1 = tmp2 * .75,
                col = "red")
       segments(x0 = cut_hi,
                y0 = tmp1[3],
-               y1 = tmp2 * 1,
+               y1 = tmp2 * .75,
                col = "red")
       segments(x0 = cut_t_lo,
-               y0 = tmp2 * 1,
+               y0 = tmp2 * 1.25,
                y1 = tmp1[4],
-               col = "black",
+               col = "blue",
                lwd = 2)
       segments(x0 = cut_t_hi,
-               y0 = tmp2 * 1,
+               y0 = tmp2 * 1.25,
                y1 = tmp1[4],
-               col = "black",
+               col = "blue",
                lwd = 2)
       arrows(x0 = cut_lo,
              y0 = tmp2 * .25,
@@ -284,18 +330,27 @@ server <- function(input, output) {
       arrows(x0 = cut_t_lo,
              y0 = tmp2 * 1.75,
              x1 = cut_t_lo - (cut_t_lo - tmp1[1]) * .5,
-             col = "black",
+             col = "blue",
              length = .10)
       arrows(x0 = cut_t_hi,
              y0 = tmp2 * 1.75,
              x1 = cut_t_hi + (tmp1[2] - cut_t_hi) * .5,
-             col = "black",
+             col = "blue",
              length = .10)
-      abline(v = input$r,
+      if (z != z_rho) {
+        arrows(x0 = z,
+               y0 = tmp2 * .75,
+               x1 = ifelse(z > z_rho,
+                           z + (tmp1[2] - z) * .5,
+                           z - (z - tmp1[1]) * .5),
+               col = "black",
+               length = .10)
+      }
+      abline(v = z,
              col = "blue",
              lwd = 2,
              lty = "dotted")
-      abline(v = input$rho,
+      abline(v = z_rho,
              col = "black",
              lwd = 2,
              lty = "dashed")
@@ -307,18 +362,20 @@ server <- function(input, output) {
                         maxColorValue = 255,
                         alpha = 50,
                         names = "red_t")
-      r_str <- formatC(input$r, digits = 2, format = "f")
+      z_str <- formatC(z, digits = 2, format = "f")
       cut_lo_str <- formatC(cut_lo, digits = 2, format = "f")
       cut_hi_str <- formatC(cut_hi, digits = 2, format = "f")
       cut_t_lo_str <- formatC(cut_t_lo, digits = 2, format = "f")
       cut_t_hi_str <- formatC(cut_t_hi, digits = 2, format = "f")
       cut_t_lo_str <- paste0("z Critical:\n", cut_t_lo_str)
       cut_t_hi_str <- paste0("z Critical:\n", cut_t_hi_str)
-      sig <- (abs(input$r) > abs(cut_lo))
-      legend(x = input$r,
-             y = .50 * (tmp1[4] - tmp1[3]),
-             legend = paste0("r: ",
-                             r_str),
+      z_p05 <- z_p / 2
+      z_p05_str <- formatC(z_p05, digits = 3, format = "f")
+      sig <- ((z < cut_lo) || (z > cut_hi))
+      legend(x = z,
+             y = .50 * y_length,
+             legend = paste0("z: ",
+                             z_str),
              text.col = "black",
              box.col = ifelse(sig, box_color2, box_color),
              bg = ifelse(sig, box_color2, box_color),
@@ -326,20 +383,32 @@ server <- function(input, output) {
              yjust = .5,
              adj = c(0.25, 0.25))
       text(x = cut_lo,
-           y = .25 * (tmp1[4] - tmp1[3]),
+           y = .25 * y_length,
            labels = paste0("Lower\nCutoff\n",
                            cut_lo_str))
       text(x = cut_hi,
-           y = .25 * (tmp1[4] - tmp1[3]),
+           y = .25 * y_length,
            labels = paste0("Upper\nCutoff\n",
                            cut_hi_str))
       text(x = cut_t_lo,
-           y = .75 * (tmp1[4] - tmp1[3]),
+           y = .75 * y_length,
            labels = cut_t_lo_str)
       text(x = cut_t_hi,
-           y = .75 * (tmp1[4] - tmp1[3]),
+           y = .75 * y_length,
            labels = cut_t_hi_str)
-      })
+      if (z != z_rho) {
+        text(x = z,
+             y = tmp2 * .75,
+             labels = ifelse(z > 0,
+                             paste0("Area to right:\n",
+                                    z_p05_str),
+                             paste0("Area to left:\n",
+                                    z_p05_str)),
+             adj = ifelse(z > 0,
+                          c(0, 0),
+                          c(1, 0)))
+      }
+    })
     output$note <- renderText({
         tmp <- paste("<ul>")
         tmp <- paste("<li>Lower Cutoff: Value with",
@@ -353,13 +422,42 @@ server <- function(input, output) {
                      "<li>t Critical: Critical values",
                      "based on a <i>t</i> distributon,",
                      "assuming the population correlation is zero.")
-        # tmp <- paste(tmp,
-        #              "<li>The QQ-plot shows how close",
-        #              "the sampling distribution is",
-        #              "to a normal distribution.")
+        tmp <- paste(tmp,
+                     "<li>z Critical: Critical values",
+                     "based on a normal distributon,",
+                     "assuming the population correlation is zero.")
+        tmp <- paste(tmp,
+                     "<li>Area to the left/right is",
+                     "based on the distribution of simulated",
+                     "sample <i>r</i>s / <i>z</i>s.")
+        tmp <- paste(tmp,
+                     "<li>2 x the area is the <i>p</i>-value",
+                     "based on the distributon of simulated",
+                     "sample <i>r</i>s / <i>z</i>s.")
+        tmp <- paste(tmp,
+                     "<li>(Optional) The QQ-plots below show how close",
+                     "the sampling distributions are",
+                     "to a normal distribution.")
         tmp <- paste(tmp, "</ul>")
         tmp
       }, sep = "\n")
+    output$qq1 <- renderPlot({
+        rs <- update_samples()
+        qqnorm(rs,
+               main = paste("QQ-Plot of the",
+                            nrep,
+                            "Simulated Sample rs"))
+        qqline(rs)
+      })
+    output$qq2 <- renderPlot({
+        rs <- update_samples()
+        zs <- r2z(rs)
+        qqnorm(zs,
+               main = paste("QQ-Plot of the",
+                            nrep,
+                            "Simulated Sample zs"))
+        qqline(zs)
+      })
   }
 
 shinyApp(ui = ui, server = server)
