@@ -124,6 +124,9 @@ ui <- fluidPage(
                           TRUE),
             checkboxInput("show_p",
                           label = "Show p values and areas",
+                          TRUE),
+            checkboxInput("fix_x",
+                          label = "Fix the ranges of horizontal axes",
                           TRUE)
         )
       ),
@@ -145,7 +148,7 @@ ui <- fluidPage(
     fluidRow(
         column(12, align = "center",
             h3("Optional:"),
-            p("Click 'Update the Plots' above after changing the following")
+            p("Click 'Update the Plots' after changing the following")
           )
       ),
     fluidRow(
@@ -180,6 +183,10 @@ ui <- fluidPage(
           )
       ),
     fluidRow(
+      column(12, submitButton(paste("Update the Plots")),
+             align = "center")
+      ),
+    fluidRow(
         column(6, plotOutput("qq1")),
         column(6, plotOutput("qq2"))
       ),
@@ -190,7 +197,7 @@ ui <- fluidPage(
     fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.1.4"),
+          p("Version 0.1.5"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
               href = "https://github.com/sfcheung/statdemos/tree/master/rDistribution"),
@@ -236,14 +243,25 @@ server <- function(input, output) {
         r_p <- ifelse(r_p > .50,
                       2 * (1 - r_p),
                       2 * r_p)
-        hist(rs,
-             breaks = 50,
-             col = "grey90",
-             border = "grey80",
-             xlim = c(-1, 1),
-             xlab = "Simulated Sample r",
-             ylab = "Frequency",
-             main = paste("Histogram of", nrep, "Simulated Sample rs"))
+        # TODO: Try to reduce code duplication
+        if (input$fix_x) {
+            hist(rs,
+                breaks = 50,
+                col = "grey90",
+                border = "grey80",
+                xlim = c(-1, 1),
+                xlab = "Simulated Sample r",
+                ylab = "Frequency",
+                main = paste("Histogram of", nrep, "Simulated Sample rs"))
+          } else {
+            hist(rs,
+                breaks = 50,
+                col = "grey90",
+                border = "grey80",
+                xlab = "Simulated Sample r",
+                ylab = "Frequency",
+                main = paste("Histogram of", nrep, "Simulated Sample rs"))
+          }
         cut_lo <- quantile(rs,
                            input$alpha / 2)
         cut_hi <- quantile(rs,
@@ -389,14 +407,25 @@ server <- function(input, output) {
       z_p <- ifelse(z_p > .50,
                     2 * (1 - z_p),
                     2 * z_p)
-      hist(zs,
-           breaks = 50,
-           col = "grey90",
-           border = "grey80",
-           xlim = c(-2.7, 2.7),
-           xlab = "Fisher's z from Simulated Sample r",
-           ylab = "Frequency",
-           main = paste("Histogram of", nrep, "Simulated Fisher's zs"))
+      # TODO: Try to reduce code duplication
+      if (input$fix_x) {
+          hist(zs,
+              breaks = 50,
+              col = "grey90",
+              border = "grey80",
+              xlim = c(-2.7, 2.7),
+              xlab = "Fisher's z from Simulated Sample r",
+              ylab = "Frequency",
+              main = paste("Histogram of", nrep, "Simulated Fisher's zs"))
+        } else {
+          hist(zs,
+              breaks = 50,
+              col = "grey90",
+              border = "grey80",
+              xlab = "Fisher's z from Simulated Sample r",
+              ylab = "Frequency",
+              main = paste("Histogram of", nrep, "Simulated Fisher's zs"))
+        }
       cut_lo <- quantile(zs,
                          input$alpha / 2)
       cut_hi <- quantile(zs,
