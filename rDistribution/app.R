@@ -153,7 +153,7 @@ ui <- fluidPage(
       ),
     fluidRow(
         column(4, align = "center",
-            selectInput("x_dist", "Distribution of x and residual:",
+            selectInput("x_dist", "Distribution of x and error:",
                         c("Normal" = "normal",
                           "Chi-square" = "chisq",
                           "Uniform" = "uniform",
@@ -197,7 +197,7 @@ ui <- fluidPage(
     fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.1.5"),
+          p("Version 0.1.6"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
               href = "https://github.com/sfcheung/statdemos/tree/master/rDistribution"),
@@ -562,7 +562,24 @@ server <- function(input, output) {
       }
     })
     output$note <- renderText({
+        rho <- input$rho
+        rho_str <- formatC(rho, digits = 3, format = "f")
+        b_e <- sqrt(1 - rho^2)
+        b_e_str <- formatC(b_e, digits = 3, format = "f")
         tmp <- ""
+        tmp <- paste(tmp, "<h3>Technical Notes</h3>")
+        tmp <- paste(tmp, "<ul>")
+        tmp <- paste(tmp,
+                     "<li>Population SDs of <i>x</i> and error (<i>e</i>) are fixed to 1.")
+        tmp <- paste(tmp,
+                     "<li><i>y</i> is computed by",
+                     rho_str,
+                     "* <i>x</i> +",
+                     b_e_str,
+                     "* <i>e</i>. This ensure that the population",
+                     "correlation is equal to",
+                     rho_str, ".")
+        tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Things to Check</h3>")
         tmp <- paste(tmp, "<ul>")
         tmp <- paste(tmp,
@@ -605,6 +622,15 @@ server <- function(input, output) {
                      "the <i>t</i> nor normal distribution,",
                      "to illustrate how to define them if we",
                      "do not have a theoretical distribution.")
+        tmp <- paste(tmp,
+                     "<li><b>IMPORTANT</b>: The areas and the <i>p</i>-values",
+                     "are based on the histogram, NOT based on",
+                     "the <i>t</i> or the normal distribution,",
+                     "to illustrate how to define them if we",
+                     "do not have a theoretical distribution. Therefore,",
+                     "the <i>p</i>-value is <i>NOT</i> the usual",
+                     "<i>p</i>-value when the population correlation is <i>NOT</i>",
+                     "equal to zero (i.e,, the null hypothesis is not the usual one).")
         tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Optional / Advanced</h3>")
         tmp <- paste(tmp, "<ul>")
@@ -615,7 +641,7 @@ server <- function(input, output) {
         tmp <- paste(tmp,
                      "<li>The histograms below show the",
                      "(univariate) distributions of the",
-                     "two variables, x and y.")
+                     "two variables, <i>x</i> and <i>y</i>.")
         tmp <- paste(tmp, "</ul>")
         tmp
       }, sep = "\n")
