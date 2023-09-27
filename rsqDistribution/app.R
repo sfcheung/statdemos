@@ -1,7 +1,3 @@
-# Work-In-Progress
-
-# NOT READY
-
 # Demonstrate sampling distribution of R-squares
 
 # Global Variables
@@ -96,14 +92,6 @@ gen_sample_i <- function(b0_pop = 0,
     cbind(x, y)
   }
 
-# tmp <- gen_sample_i(b0 = 5, b1 = 2, n = 10000)
-# lm(y ~ x, data.frame(tmp))
-# apply(tmp, 2, sd)
-
-r2z <- function(x) {
-    .5 * log((1 + x) / (1 - x))
-  }
-
 # UI
 ui <- fluidPage(
     titlePanel("Sampling Distribution of R-square"),
@@ -122,7 +110,7 @@ ui <- fluidPage(
             p("2. Click 'Update the Plots'."),
             p("3. Examine the plots."),
             p("(Changing the population B0 and B1, and",
-              "the distributions of predictor and errors (not residuals) are optional.)"),
+              "the distributions of predictor and errors [not residuals] are optional.)"),
             p("(This app will be discussed in the class to demonstrate",
               "the ideas of sampling distribution, p-value, and critical value.)")
         ))),
@@ -203,7 +191,7 @@ ui <- fluidPage(
       ),
     fluidRow(
         column(4, align = "center",
-            selectInput("x_dist", "Distribution of x:",
+            selectInput("x_dist", "Distribution of x (predictor):",
                         c("Normal" = "normal",
                           "Chi-square" = "chisq",
                           "Uniform" = "uniform",
@@ -350,6 +338,7 @@ server <- function(input, output) {
                 breaks = 50,
                 col = "grey90",
                 border = "grey80",
+                xlim = c(0, max(rsq * 1.1, max(rsqs))),
                 xlab = "Simulated Sample R-square",
                 ylab = "Frequency",
                 main = paste("Histogram of", nrep, "Simulated Sample R-squares"),
@@ -433,7 +422,7 @@ server <- function(input, output) {
                bg = ifelse(sig, box_color2, box_color),
                xjust = .5,
                yjust = .5,
-               adj = c(0.25, 0.25))
+               adj = c(0.15, 0.25))
         text(x = rsqs_mean,
              y = tmp2 * 1.50,
              col = "red",
@@ -487,7 +476,7 @@ server <- function(input, output) {
         if (input$fix_x) {
             hist(rsqs,
                 breaks = 50,
-                col = "grey90",
+                col = "lightgreen",
                 border = "grey80",
                 xlim = c(-.2, 1),
                 xlab = "Simulated Sample Adjusted R-Square",
@@ -498,8 +487,9 @@ server <- function(input, output) {
           } else {
             hist(rsqs,
                 breaks = 50,
-                col = "grey90",
+                col = "lightgreen",
                 border = "grey80",
+                xlim = c(max(-.2, min(rsqs)), max(rsq * 1.1, max(rsqs))),
                 xlab = "Simulated Sample Adjusted R-square",
                 ylab = "Frequency",
                 main = paste("Histogram of", nrep, "Simulated Sample Adjusted R-squares"),
@@ -586,7 +576,7 @@ server <- function(input, output) {
                bg = ifelse(sig, box_color2, box_color),
                xjust = .5,
                yjust = .5,
-               adj = c(0.25, 0.25))
+               adj = c(0.10, 0.25))
         text(x = rsqs_mean,
              y = tmp2 * 1.50,
              col = "red",
@@ -630,10 +620,12 @@ server <- function(input, output) {
         rsq_pop_str <- formatC(rsq_pop, digits = 3, format = "f")
         b1_pop_str <- formatC(b1_pop, digits = 3, format = "f")
         tmp <- ""
-        tmp <- paste(tmp, "<h3>Note</h3>")
+        tmp <- paste(tmp, "<h3>Technical Notes</h3>")
         tmp <- paste(tmp, "<ul>")
         tmp <- paste(tmp,
-                     "<li>Population SDs of x and error are fixed to 1.")
+                     "<li>Population SDs of <i>x</i> and error (<i>e</i>) are fixed to 1.")
+        tmp <- paste(tmp,
+                     "<li><i>y</i> is computed by b0 + b1 * <i>x</i> + <i>e</i>.")
         tmp <- paste(tmp,
                      "<li>With a population slope of", b1_pop_str,
                      ", the population R-square is", rsq_pop_str, ".")
@@ -642,11 +634,11 @@ server <- function(input, output) {
         tmp <- paste(tmp, "<ul>")
         tmp <- paste(tmp,
                      "<li>Are the cutoff value and the",
-                     "critical value based on a <i>F</i> distribution close to each other?")
+                     "critical value based on an <i>F</i> distribution close to each other?")
         tmp <- paste(tmp,
                      "<li>If the cutoff value and the",
-                     "critical value baesd on a <i>F</i> distribution  are very different, what if we use the",
-                     "critical value based on a <i>F</i> distribution  to test the null hypothesis?")
+                     "critical value baesd on an <i>F</i> distribution  are very different, what if we use the",
+                     "critical value based on an <i>F</i> distribution  to test the null hypothesis?")
         tmp <- paste(tmp,
                      "<li>Is the mean of the",
                      nrep, "simulated sample R-squares close to",
@@ -654,22 +646,27 @@ server <- function(input, output) {
                      rsq_pop_str, "?")
         tmp <- paste(tmp,
                      "<li>Is the mean of the",
-                     nrep, "simulated sample adjusted R-squares close to",
+                     nrep, "simulated sample <i>adjusted</i> R-squares close to",
                      "the population R-square,",
                      rsq_pop_str, "?")
         tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Annotation</h3>")
         tmp <- paste(tmp, "<ul>")
         tmp <- paste(tmp,
+                     "<li>Note that we only test whether",
+                     "a sample <i>R-square</i> is 'too large' if the population",
+                     "<i>R-square</i> is zero. Therefore,",
+                     "there is only one cutoff value.")
+        tmp <- paste(tmp,
                      "<li>Upper Cutoff: Value with",
                      100 * input$alpha,
                      "% sample <i>R-square</i>s to the right.")
         tmp <- paste(tmp,
-                     "<li>F Critical: Critical values",
-                     "based on a <i>F</i> distribution,",
-                     "assuming the population R-square is zero.")
+                     "<li>F Critical: Critical valus",
+                     "based on an <i>F</i> distribution,",
+                     "assuming the population <i>R-square</i> is zero.")
         tmp <- paste(tmp,
-                     "<li>Area to the left/right is",
+                     "<li>Area to the right is",
                      "based on the distribution of simulated",
                      "sample <i>R-square</i>s.")
         tmp <- paste(tmp,
@@ -677,11 +674,14 @@ server <- function(input, output) {
                      "based on the distribution of simulated",
                      "sample <i>R-square</i>s.")
         tmp <- paste(tmp,
-                     "<li>IMPORTANT: The area and the p-value",
+                     "<li><b>IMPORTANT</b>: The area and the <i>p</i>-value",
                      "are based on the histogram, NOT based on",
-                     "the <i>F</i> distribution,",
+                     "an <i>F</i> distribution,",
                      "to illustrate how to define them if we",
-                     "do not have a theoretical distribution.")
+                     "do not have a theoretical distribution. Therefore,",
+                     "the <i>p</i>-value are <i>NOT</i> the usual",
+                     "<i>p</i>-value when the population R-square is <i>NOT</i>",
+                     "equal to zero (i.e,, the null hypothesis is not the usual one).")
         tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Optional / Advanced</h3>")
         tmp <- paste(tmp, "<ul>")
