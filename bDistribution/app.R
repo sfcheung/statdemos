@@ -1,5 +1,8 @@
 # Work-In-Progress
 
+# ON-HOLD: It seems that it is inevitable to use the t-distribution
+#          for illustration but this is not easy to undersatnd.
+
 # NOT READY
 
 # Demonstrate sampling distribution of regression coefficient
@@ -8,8 +11,12 @@
 
 nrep <- 20000
 n_raw <- 10000
+sd_y_sample <- 2 / .8
 
-gen_samples <- function(rho = 0,
+gen_samples <- function(b0_pop = 0,
+                        b1_pop = 0,
+                        sd_x = 1,
+                        sd_e = 1,
                         n = 50,
                         nrep = 10000,
                         x_dist = "normal",
@@ -20,7 +27,10 @@ gen_samples <- function(rho = 0,
                         e_df = 1,
                         e_alpha = .5,
                         e_beta = .5) {
-    out <- replicate(nrep, gen_sample_i(rho = rho,
+    out <- replicate(nrep, gen_sample_i(b0_pop = b0_pop,
+                                        b1_pop = b1_pop,
+                                        sd_x = sd_x,
+                                        sd_e = sd_e,
                                         n = n,
                                         x_dist = x_dist,
                                         x_df = x_df,
@@ -42,7 +52,14 @@ gen_samples <- function(rho = 0,
     t(lm_out)
   }
 
-gen_sample_i <- function(rho = 0,
+# tmp1 <- gen_samples(b0 = 5, b1 = 2, n = 100, nrep = 1000)
+# 2 * 1 / sqrt((2^2 + 1))
+# colMeans(tmp1)
+
+gen_sample_i <- function(b0_pop = 0,
+                         b1_pop = 0,
+                         sd_x = 1,
+                         sd_e = 1,
                          n = 50,
                          x_dist = c("normal",
                                     "chisq",
@@ -74,9 +91,13 @@ gen_sample_i <- function(rho = 0,
                 chisq = (rchisq(n, df = e_df) - e_df) / sqrt(2 * e_df),
                 uniform = runif(n, -.5, .5) / sqrt(12),
                 beta = (rbeta(n, e_alpha, e_beta) - mean_beta_e) / sd_beta_e)
-    y <- rho * x + sqrt(1 - rho^2) * e
+    y <- b0_pop + b1_pop * x * sd_x + e * sd_e
     cbind(x, y)
   }
+
+# tmp <- gen_sample_i(b0 = 5, b1 = 2, n = 10000)
+# lm(y ~ x, data.frame(tmp))
+# apply(tmp, 2, sd)
 
 r2z <- function(x) {
     .5 * log((1 + x) / (1 - x))
@@ -90,38 +111,46 @@ ui <- fluidPage(
         wellPanel(
             p("This page illustrates how to find",
               "the critical values (cutoff values)",
-              "for testing a sample r (correlation)",
+              "for testing a sample B (regression coefficient)",
               "using an empirical distribution",
-              "of", nrep, "simulated sample r computed from",
+              "of", nrep, "simulated sample Bs computed from",
               nrep, "samples drawn from a",
-              "population with the required population correlation."),
+              "population with the required population B0 and B1."),
             p("How to Use it:"),
-            p("1. Set the sample size, sample r, and level of significance."),
+            p("1. Set the sample size and sample B for the predictor (B1)."),
             p("2. Click 'Update the Plots'."),
             p("3. Examine the plots."),
-            p("(Changing the population correlation and",
-              "the distributions of variables are optional.)"),
+            p("(Changing the sample SD of X, the population B0 and B1, and",
+              "the distributions of predictor and errors (not residuals) are optional.)"),
             p("(This app will be discussed in the class to demonstrate",
-              "the ideas of sampling distribution, p-value, critical value,",
-              "and transformation.)")
+              "the ideas of sampling distribution, p-value, and critical value.)")
         ))),
     fluidRow(
-        column(4, align = "center",
+        column(3, align = "center",
           sliderInput("n",
                       label = "Sample Size (n)",
                       min = 10,
                       max = 500,
                       value = 10,
                       step = 10)),
-        column(4, align = "center",
-               sliderInput("b",
-                           label = "Sample B",
-                           min = -.99,
-                           max = .99,
-                           value = .40,
-                           round = -2,
+        column(3, align = "center",
+               sliderInput("b1",
+                           label = "Sample B1",
+                           min = -1,
+                           max = 1,
+                           value = 1,
                            step = .01)),
-        column(4, align = "center",
+        column(3, align = "center",
+               sliderInput("sd_x_sample",
+                           label = "Sample SD of X",
+                           min = .5,
+                           max = 2,
+                           value = 1,
+                           step = .01)),
+        # Max abs(b): 1
+        # Max abs(sd_x_sample): 2
+        # Set sd_y_sample to 2 / .8 or 2.5
+        column(3, align = "center",
                sliderInput("alpha",
                            label = "Level of Significance",
                            min = .001,
@@ -131,15 +160,21 @@ ui <- fluidPage(
                            step = .001))
       ),
     fluidRow(
-        column(6, align = "center",
-            sliderInput("b_pop", label = "Population B",
-                        min = -.99,
-                        max = .99,
+        column(4, align = "center",
+            sliderInput("b0_pop", label = "Population B0 (Intercept)",
+                        min = -5,
+                        max =  5,
                         value = 0,
-                        round = -2,
                         step = .01)
           ),
-        column(6, align = "left",
+        column(4, align = "center",
+            sliderInput("b1_pop", label = "Population B1 (Slope)",
+                        min = -1.5,
+                        max =  1.5,
+                        value = 0,
+                        step = .01)
+          ),
+        column(4, align = "left",
             checkboxInput("show_t",
                           label = "Show t critical values",
                           TRUE),
@@ -272,7 +307,8 @@ ui <- fluidPage(
 
 # Server
 server <- function(input, output) {
-    update_samples <- reactive(gen_samples(rho = input$b_pop,
+    update_samples <- reactive(gen_samples(b0_pop = input$b0_pop,
+                                           b1_pop = input$b1_pop,
                                            n = input$n,
                                            nrep = nrep,
                                            x_dist = input$x_dist,
@@ -283,7 +319,8 @@ server <- function(input, output) {
                                            e_df = input$e_df,
                                            e_alpha = input$e_alpha,
                                            e_beta = input$e_beta))
-    update_raw_data <- reactive(gen_samples(rho = input$b_pop,
+    update_raw_data <- reactive(gen_samples(b0_pop = input$b0_pop,
+                                            b1_pop = input$b1_pop,
                                             n = n_raw,
                                             nrep = 1,
                                             x_dist = input$x_dist,
@@ -296,10 +333,12 @@ server <- function(input, output) {
                                             e_beta = input$e_beta))
     output$hist1 <- renderPlot({
         lm_out <- update_samples()
-        b <- input$b
+        b <- input$b1
         n <- input$n
-        b_pop <- input$b_pop
-        b_se <- sqrt((1 - b^2) / (n - 2))
+        sd_x_sample <- input$sd_x_sample
+        b_pop <- input$b1_pop
+        r <- b * sd_x_sample / sd_y_sample
+        b_se <- (sd_y_sample / sd_x_sample) * sqrt((1 - r^2) / (n - 2))
         b_t <- b / b_se
         t_p <- 2 * pt(abs(b_t),
                         df = n - 2,
@@ -315,7 +354,7 @@ server <- function(input, output) {
                 breaks = 50,
                 col = "grey90",
                 border = "grey80",
-                xlim = c(-1, 1),
+                xlim = c(-3, 3),
                 xlab = "Simulated Sample B",
                 ylab = "Frequency",
                 main = paste("Histogram of", nrep, "Simulated Sample Bs"))
