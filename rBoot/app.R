@@ -139,7 +139,7 @@ ui <- fluidPage(
     fluidRow(
         column(4, align = "center",
             checkboxInput("show_t",
-                          label = "Show confidence interval based on t or normal distribution",
+                          label = "Show confidence interval based on the normal distribution",
                           TRUE)
         ),
         column(4, align = "center",
@@ -223,6 +223,7 @@ ui <- fluidPage(
     fluidRow(
         column(12,
             wellPanel(
+                h3("Technical Notes:"),
                 p("Note that the two variables are",
                   "generated such that they have exactly",
                   "the sample correlation set above. Because eigenvectors",
@@ -231,14 +232,20 @@ ui <- fluidPage(
                   "may not have the same univariate distributions.",
                   "This is not an issue because the goal of the illustration",
                   "is to generate 'some' nonnormal data. Having",
-                  "exact control on the form is not the main concern.")
+                  "exact control on the form is not the main concern."),
+                p("If you are interested in knowing how the data",
+                  "is generated, you can check the function",
+                  a('to_r()',
+                    href = "https://github.com/sfcheung/statdemos/blob/1e3c0f3ea68bdcadb450f6cd30c1676cd4e4c8a3/rBoot/app.R#L76-L88"),
+                  ". This is actually not a good way to simulate the data,",
+                  "but is good enough for this illustration.")
               )
           )
       ),
     fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.1.0"),
+          p("Version 0.1.1"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
               href = "https://github.com/sfcheung/statdemos/tree/master/rBoot"),
@@ -317,8 +324,7 @@ server <- function(input, output) {
                            alpha / 2)
         cut_hi <- quantile(rs,
                            1 - alpha / 2)
-        cut_t <- qt(1 - alpha / 2,
-                    df = input$n - 2)
+        cut_t <- qnorm(1 - alpha / 2)
         se_r <- (1 - input$r^2) / sqrt(input$n - 1)
         cut_t_lo <- input$r - se_r * cut_t
         cut_t_hi <- input$r + se_r * cut_t
@@ -380,8 +386,8 @@ server <- function(input, output) {
         cut_hi_str <- formatC(cut_hi, digits = 3, format = "f")
         cut_t_lo_str <- formatC(cut_t_lo, digits = 3, format = "f")
         cut_t_hi_str <- formatC(cut_t_hi, digits = 3, format = "f")
-        cut_t_lo_str <- paste0("t-based\nLower\nLimit:\n", cut_t_lo_str)
-        cut_t_hi_str <- paste0("t-based\nUpper\nLimit:\n", cut_t_hi_str)
+        cut_t_lo_str <- paste0("SE-Based\nLower\nLimit:\n", cut_t_lo_str)
+        cut_t_hi_str <- paste0("SE-Based\nUpper\nLimit:\n", cut_t_hi_str)
         r_p_str <- formatC(r_p, digits = 3, format = "f")
         r_p05 <- r_p / 2
         r_p05_str <- formatC(r_p05, digits = 3, format = "f")
@@ -511,8 +517,8 @@ server <- function(input, output) {
       cut_hi_str <- formatC(cut_hi, digits = 3, format = "f")
       cut_t_lo_str <- formatC(cut_t_lo, digits = 3, format = "f")
       cut_t_hi_str <- formatC(cut_t_hi, digits = 3, format = "f")
-      cut_t_lo_str <- paste0("z-based\nLower\nLimit:\n", cut_t_lo_str)
-      cut_t_hi_str <- paste0("z-based\nUpper\nLimit:\n", cut_t_hi_str)
+      cut_t_lo_str <- paste0("SE-Based\nLower\nLimit:\n", cut_t_lo_str)
+      cut_t_hi_str <- paste0("SE-Based\nUpper\nLimit:\n", cut_t_hi_str)
       z_p_str <- formatC(z_p, digits = 3, format = "f")
       z_p05 <- z_p / 2
       z_p05_str <- formatC(z_p05, digits = 3, format = "f")
@@ -559,14 +565,11 @@ server <- function(input, output) {
                      "different, what if we use the",
                      "symmetric confidence interval to test the null hypothesis?")
         tmp <- paste(tmp,
-                     "<li>Does the <i>t</i>",
-                     "confidence interval change if we generate a new sample?")
-        tmp <- paste(tmp,
-                     "<li>Does the Fisher's <i>z</i>",
-                     "confidence interval change if we generate a new sample?")
+                     "<li>Does the SE-based",
+                     "confidence intervals change if we generate a new sample?")
         tmp <- paste(tmp,
                      "<li>Does the nonparametric bootstrap",
-                     "confidence interval change if we generate a new sample?")
+                     "confidence intervals change if we generate a new sample?")
         tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Annotation</h3>")
         tmp <- paste(tmp, "<ul>")
@@ -576,17 +579,25 @@ server <- function(input, output) {
                      input$level * 100, "%",
                      "confidence interval")
         tmp <- paste(tmp,
-                     "<li>The interval from the <i>t-based Lower Limit</i>",
-                     "to the <i>t-based Upper Limit</i> is the",
-                     input$level * 100, "%",
-                     "confidence interval based on the <i>t</i> distribution",
-                     "and the approximate standard error of Pearson's <i>r</i>.")
-        tmp <- paste(tmp,
-                     "<li>The interval from the <i>z-based Lower Limit</i>",
-                     "to the <i>z-based Upper Limit</i> is the",
+                     "<li>The interval from the <i>SE-based Lower Limit</i>",
+                     "to the <i>SE-based Upper Limit</i> in the Pearson's <i>r</i> histogram is the",
                      input$level * 100, "%",
                      "confidence interval based on the normal distribution",
-                     "and the standard error of Fisher's <i>r</i>.")
+                     "and the approximate standard error of Pearson's <i>r</i>",
+                     "given by sqrt((1 - <i>r</i>^2)/(<i>n</i> - 1)),",
+                     "<i>n</i> being the sample size.")
+        tmp <- paste(tmp,
+                     "<li>The interval from the <i>SE-based Lower Limit</i>",
+                     "to the <i>SE-based Upper Limit</i> in the Fisher's <i>z</i> histogram is the",
+                     input$level * 100, "%",
+                     "confidence interval based on the normal distribution",
+                     "and the standard error of Fisher's <i>r</i>,",
+                     "given by 1 / sqrt(<i>n</i> - 3), <i>n</i> being the sample size.")
+        tmp <- paste(tmp,
+                     "<li>Note that both the intervals based on SE (standard error),",
+                     "the one for Pearson's <i>r</i> and the one for",
+                     "Fisher's <i>z</i>, are based on <i>approximated</i>",
+                     "standard errors. Therefore, they may not yield identical conclusions.")
         tmp <- paste(tmp, "</ul>")
         tmp <- paste(tmp, "<h3>Optional / Advanced</h3>")
         tmp <- paste(tmp, "<ul>")
@@ -597,11 +608,11 @@ server <- function(input, output) {
         tmp <- paste(tmp,
                      "<li>The histograms below show the",
                      "(univariate) distributions of the",
-                     "two variables, x and y.")
+                     "two variables, <i>x</i> and <i>y</i>.")
         tmp <- paste(tmp,
                      "<li>The contour plot",
                      "shows the bivariate distributions of the",
-                     "two variables, x and y.")
+                     "two variables, <i>x</i> and <i>y</i>.")
         tmp <- paste(tmp, "</ul>")
         tmp
       }, sep = "\n")
