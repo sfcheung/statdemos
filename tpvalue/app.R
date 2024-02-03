@@ -62,7 +62,7 @@ ui <- fluidPage(
     fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.1.1"),
+          p("Version 0.1.2"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
               href = "https://github.com/sfcheung/statdemos/tree/master/tpvalue"),
@@ -370,9 +370,10 @@ server <- function(input, output) {
       })
     output$note3 <- renderText({
         tmp <- ""
-        tmp <- paste(tmp, "<h3>On Excel Functions</h3>",
-                     "Excel also similar functions: <b>T.DIST.RT()</b>",
-                     "<b>T.DIST()</b>, and <b>T.DIST.2T()</b>. Like",
+        tmp <- paste(tmp, "<h3>On Spreadsheet Functions</h3>",
+                     "Some spreadsheet programs, such as Excel,",
+                     "also have similar functions: <b>T.DIST.RT()</b>",
+                     "<b>T.DIST()</b>, and <b>T.DIST.2T()</b> in Excel. Like",
                      "<b>pt()</b>, they also have default directions",
                      "in finding the area, though it is the area to",
                      "the <i>right</i> for <b>T.DIST.RT()</b>, which",
