@@ -67,7 +67,7 @@ ui <- fluidPage(
           p("The distance to the centroid does not take into account the covariance.")
         ),
       wellPanel(
-        p("Version 1.0.0"),
+        p("Version 1.0.1"),
         p("The latest version of the code can be found at ",
           a("statdemos at GitHub",
             href="https://github.com/sfcheung/statdemos/tree/master/hatvalue"),
@@ -113,7 +113,7 @@ server <- function(input, output) {
         p_title <- paste0("Hat Value of the diamond point is ",
                           formatC(dat_hat[n + 1], digits = 4, format = "f"),
                           "\n",
-                          "Distance from thee centroid is ",
+                          "Distance from the centroid is ",
                           formatC(user_dist, digits = 4, format = "f"))
         plot(x, y,
             cex = cexAll / 2,
