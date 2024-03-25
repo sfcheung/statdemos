@@ -89,12 +89,12 @@ ui <- fluidPage(
                       value = 10,
                       step = 10)),
         column(4, align = "center",
-               sliderInput("r",
+               numericInput("r",
                            label = "Sample Correlation (r)",
                            min = -.99,
                            max = .99,
                            value = .40,
-                           round = -2,
+                           # round = -2,
                            step = .01)),
         column(4, align = "center",
                sliderInput("alpha",
@@ -107,11 +107,11 @@ ui <- fluidPage(
       ),
     fluidRow(
         column(6, align = "center",
-            sliderInput("rho", label = "Population Correlation",
+            numericInput("rho", label = "Population Correlation",
                         min = -.99,
                         max = .99,
                         value = 0,
-                        round = -2,
+                        # round = -2,
                         step = .01)
           ),
         column(6, align = "left",
@@ -196,14 +196,14 @@ ui <- fluidPage(
     fluidRow(
       column(12,
         wellPanel(
-          p("Version 0.1.7"),
+          p("Version 0.1.8"),
           p("The latest version of the code can be found at ",
             a("statdemos at GitHub",
-              href = "https://github.com/sfcheung/statdemos/tree/master/rDistributionSimple"),
+              href = "https://github.com/sfcheung/statdemos/tree/master/rDistributionSimpleTextInput"),
               "."
             ),
           p("This app can be run directly by ",
-            code("shiny::runUrl(\"https://github.com/sfcheung/statdemos/raw/master/apps/rDistributionSimple.zip\")")
+            code("shiny::runUrl(\"https://github.com/sfcheung/statdemos/raw/master/apps/rDistributionSimpleTextInput.zip\")")
             ),
           p("If you discovered any issues, such as bugs,",
             "it would be nice if you report them at",
@@ -615,12 +615,12 @@ server <- function(input, output) {
                      "<li>2 x the area is the <i>p</i>-value",
                      "based on the distribution of simulated",
                      "sample <i>r</i>s / <i>z</i>s.")
-        tmp <- paste(tmp,
-                     "<li>IMPORTANT: The areas and the p-values",
-                     "are based on the histogram, NOT based on",
-                     "the <i>t</i> nor normal distribution,",
-                     "to illustrate how to define them if we",
-                     "do not have a theoretical distribution.")
+        # tmp <- paste(tmp,
+        #             "<li>IMPORTANT: The areas and the p-values",
+        #             "are based on the histogram, NOT based on",
+        #             "the <i>t</i> nor normal distribution,",
+        #             "to illustrate how to define them if we",
+        #             "do not have a theoretical distribution.")
         tmp <- paste(tmp,
                      "<li><b>IMPORTANT</b>: The areas and the <i>p</i>-values",
                      "are based on the histogram, NOT based on",
