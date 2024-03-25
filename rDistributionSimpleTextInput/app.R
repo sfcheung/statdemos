@@ -82,7 +82,7 @@ ui <- fluidPage(
         ))),
     fluidRow(
         column(4, align = "center",
-          sliderInput("n",
+          numericInput("n",
                       label = "Sample Size (n)",
                       min = 10,
                       max = 500,
@@ -97,12 +97,12 @@ ui <- fluidPage(
                            # round = -2,
                            step = .01)),
         column(4, align = "center",
-               sliderInput("alpha",
+               numericInput("alpha",
                            label = "Level of Significance",
                            min = .001,
                            max = .10,
                            value = .05,
-                           round = -3,
+                           # round = -3,
                            step = .001))
       ),
     fluidRow(
