@@ -1,5 +1,6 @@
 # Demonstrate sampling distribution of Sample Pearson's r
 # Use text input for some parameters
+# Based on rDistribution 0.1.7
 
 # Global Variables
 
@@ -85,7 +86,7 @@ ui <- fluidPage(
           numericInput("n",
                       label = "Sample Size (n)",
                       min = 10,
-                      max = 500,
+                      max = 1000,
                       value = 10,
                       step = 10)),
         column(4, align = "center",
@@ -99,14 +100,14 @@ ui <- fluidPage(
         column(4, align = "center",
                numericInput("alpha",
                            label = "Level of Significance",
-                           min = .001,
-                           max = .10,
+                           min = .0001,
+                           max = .20,
                            value = .05,
                            # round = -3,
                            step = .001))
       ),
     fluidRow(
-        column(6, align = "center",
+        column(4, align = "center",
             numericInput("rho", label = "Population Correlation",
                         min = -.99,
                         max = .99,
@@ -114,13 +115,15 @@ ui <- fluidPage(
                         # round = -2,
                         step = .01)
           ),
-        column(6, align = "left",
+        column(4, align = "left",
             checkboxInput("show_t",
                           label = "Show t and z critical values",
                           TRUE),
             checkboxInput("show_cutoff",
                           label = "Show cutoff values",
-                          TRUE),
+                          TRUE)
+        ),
+        column(4, align = "left",
             checkboxInput("show_p",
                           label = "Show p values and areas",
                           TRUE),
@@ -136,6 +139,13 @@ ui <- fluidPage(
     fluidRow(
         column(6, plotOutput("hist1")),
         column(6, plotOutput("hist2"))
+      ),
+    fluidRow(
+        column(12,
+          wellPanel(
+              htmlOutput("ci")
+          )
+          )
       ),
     fluidRow(
         column(12,
@@ -560,6 +570,32 @@ server <- function(input, output) {
                           c(1, 0)))
       }
     })
+    output$ci <- renderText({
+        rs <- update_samples()
+        r_cut_lo <- quantile(rs,
+                           input$alpha / 2)
+        r_cut_hi <- quantile(rs,
+                           1 - input$alpha / 2)
+        r_cut_lo_str <- formatC(r_cut_lo, digits = 3, format = "f")
+        r_cut_hi_str <- formatC(r_cut_hi, digits = 3, format = "f")
+        zs <- r2z(rs)
+        z_cut_lo <- quantile(zs,
+                          input$alpha / 2)
+        z_cut_hi <- quantile(zs,
+                          1 - input$alpha / 2)
+        z_cut_lo_str <- formatC(z_cut_lo, digits = 3, format = "f")
+        z_cut_hi_str <- formatC(z_cut_hi, digits = 3, format = "f")
+        tmp <- ""
+        cl_str <- paste0((1 - input$alpha) * 100, "%")
+        tmp <- paste(tmp, "<h3>Parametric Confidence Interval</h3>")
+        tmp <- paste(tmp, "<p>The", cl_str,
+                     "parametric confidence interval for Pearson's r is",
+                     "[", r_cut_lo_str, ";", r_cut_hi_str, "]")
+        tmp <- paste(tmp, "<p>The", cl_str,
+                     "parametric confidence interval for Fisher's z is",
+                     "[", z_cut_lo_str, ";", z_cut_hi_str, "]")
+        tmp
+      }, sep = "\n")
     output$note <- renderText({
         rho <- input$rho
         rho_str <- formatC(rho, digits = 3, format = "f")
@@ -615,12 +651,6 @@ server <- function(input, output) {
                      "<li>2 x the area is the <i>p</i>-value",
                      "based on the distribution of simulated",
                      "sample <i>r</i>s / <i>z</i>s.")
-        # tmp <- paste(tmp,
-        #             "<li>IMPORTANT: The areas and the p-values",
-        #             "are based on the histogram, NOT based on",
-        #             "the <i>t</i> nor normal distribution,",
-        #             "to illustrate how to define them if we",
-        #             "do not have a theoretical distribution.")
         tmp <- paste(tmp,
                      "<li><b>IMPORTANT</b>: The areas and the <i>p</i>-values",
                      "are based on the histogram, NOT based on",
@@ -633,70 +663,70 @@ server <- function(input, output) {
         tmp <- paste(tmp, "</ul>")
         tmp
       }, sep = "\n")
-    output$qq1 <- renderPlot({
-        rs <- update_samples()
-        qqnorm(rs,
-               main = paste("QQ-Plot of the",
-                            nrep,
-                            "Simulated Sample rs"))
-        qqline(rs)
-      })
-    output$qq2 <- renderPlot({
-        rs <- update_samples()
-        zs <- r2z(rs)
-        qqnorm(zs,
-               main = paste("QQ-Plot of the",
-                            nrep,
-                            "Simulated Sample zs"))
-        qqline(zs)
-      })
-    output$histx <- renderPlot({
-        dat <- update_raw_data()[[1]]
-        x <- dat[, "x"]
-        x_dot <- seq(min(x),
-                     max(x),
-                     length = 100)
-        x_dnorm <- dnorm(x_dot,
-                         mean = mean(x),
-                         sd = sd(x))
-        hist(x,
-             breaks = 50,
-             prob = TRUE,
-             col = "grey90",
-             border = "grey80",
-             xlab = "x",
-             ylab = "Frequency",
-             main = paste("Histogram of", n_raw, "Simulated x"),
-             sub = "Normal Curve Overlayed")
-        lines(x_dot,
-              x_dnorm,
-              col = "blue",
-              lwd = 2)
-      })
-    output$histy <- renderPlot({
-        dat <- update_raw_data()[[1]]
-        x <- dat[, "y"]
-        x_dot <- seq(min(x),
-                     max(x),
-                     length = 100)
-        x_dnorm <- dnorm(x_dot,
-                         mean = mean(x),
-                         sd = sd(x))
-        hist(x,
-             breaks = 50,
-             prob = TRUE,
-             col = "grey90",
-             border = "grey80",
-             xlab = "y",
-             ylab = "Frequency",
-             main = paste("Histogram of", n_raw, "Simulated y"),
-             sub = "Normal Curve Overlayed")
-        lines(x_dot,
-              x_dnorm,
-              col = "red",
-              lwd = 2)
+    # output$qq1 <- renderPlot({
+    #     rs <- update_samples()
+    #     qqnorm(rs,
+    #            main = paste("QQ-Plot of the",
+    #                         nrep,
+    #                         "Simulated Sample rs"))
+    #     qqline(rs)
+    #   })
+    # output$qq2 <- renderPlot({
+    #     rs <- update_samples()
+    #     zs <- r2z(rs)
+    #     qqnorm(zs,
+    #            main = paste("QQ-Plot of the",
+    #                         nrep,
+    #                         "Simulated Sample zs"))
+    #     qqline(zs)
+    #   })
+    # output$histx <- renderPlot({
+    #     dat <- update_raw_data()[[1]]
+    #     x <- dat[, "x"]
+    #     x_dot <- seq(min(x),
+    #                  max(x),
+    #                  length = 100)
+    #     x_dnorm <- dnorm(x_dot,
+    #                      mean = mean(x),
+    #                      sd = sd(x))
+    #     hist(x,
+    #          breaks = 50,
+    #          prob = TRUE,
+    #          col = "grey90",
+    #          border = "grey80",
+    #          xlab = "x",
+    #          ylab = "Frequency",
+    #          main = paste("Histogram of", n_raw, "Simulated x"),
+    #          sub = "Normal Curve Overlayed")
+    #     lines(x_dot,
+    #           x_dnorm,
+    #           col = "blue",
+    #           lwd = 2)
+    #   })
+    # output$histy <- renderPlot({
+    #     dat <- update_raw_data()[[1]]
+    #     x <- dat[, "y"]
+    #     x_dot <- seq(min(x),
+    #                  max(x),
+    #                  length = 100)
+    #     x_dnorm <- dnorm(x_dot,
+    #                      mean = mean(x),
+    #                      sd = sd(x))
+    #     hist(x,
+    #          breaks = 50,
+    #          prob = TRUE,
+    #          col = "grey90",
+    #          border = "grey80",
+    #          xlab = "y",
+    #          ylab = "Frequency",
+    #          main = paste("Histogram of", n_raw, "Simulated y"),
+    #          sub = "Normal Curve Overlayed")
+    #     lines(x_dot,
+    #           x_dnorm,
+    #           col = "red",
+    #           lwd = 2)
 
-      })
+    #   })
   }
 
 shinyApp(ui = ui, server = server)
